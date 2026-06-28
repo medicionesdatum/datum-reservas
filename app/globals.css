@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(22, 217, 230, 0.14), transparent 32rem),
+    linear-gradient(135deg, #06111f 0%, #0a1728 48%, #07101d 100%);
+  color: #e9f7fb;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.datum-hero {
+  background-image: url("/assets/datum-hero.jpg");
+  background-position: center;
+  background-size: cover;
+  isolation: isolate;
+  min-height: 640px;
+  position: relative;
+}
+
+.datum-hero-shade {
+  background: linear-gradient(90deg, rgba(2, 12, 26, 0.96) 0%, rgba(2, 12, 26, 0.78) 52%, rgba(2, 12, 26, 0.18) 100%);
+  inset: 0;
+  position: absolute;
+  z-index: 0;
+}
+
+.datum-contact-link {
+  display: block;
+  transition: color 160ms ease;
+}
+
+.datum-contact-link:hover {
+  color: #16d9e6;
+}
+
+@media (max-width: 640px) {
+  .datum-hero {
+    background-position: 68% center;
+    min-height: 680px;
+  }
+
+  .datum-hero-shade {
+    background: linear-gradient(180deg, rgba(2, 12, 26, 0.7) 0%, rgba(2, 12, 26, 0.96) 68%, #020c1a 100%);
+  }
+}
+
+input,
+select,
+textarea {
+  color: #06111f;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.focus-ring:focus-visible {
+  outline-color: #16d9e6;
+}
+
+.calendar-arrow {
+  align-items: center;
+  border: 1px solid #1f3854;
+  border-radius: 4px;
+  display: flex;
+  font-size: 1.25rem;
+  height: 2.5rem;
+  justify-content: center;
+  transition: border-color 160ms ease;
+  width: 2.5rem;
+}
+
+.calendar-arrow:hover {
+  border-color: #16d9e6;
+}
