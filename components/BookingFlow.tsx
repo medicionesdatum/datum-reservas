@@ -620,11 +620,15 @@ function StepDate({
   const [visibleMonth, setVisibleMonth] = useState(
     () => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
   );
-  const calendarDays = getCalendarDays(visibleMonth);
   const monthLabel = new Intl.DateTimeFormat("es-ES", {
     month: "long",
     year: "numeric"
   }).format(visibleMonth);
+  const nextVisibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+  const nextMonthLabel = new Intl.DateTimeFormat("es-ES", {
+    month: "long",
+    year: "numeric"
+  }).format(nextVisibleMonth);
   const selectedLabel = new Intl.DateTimeFormat("es-ES", {
     weekday: "long",
     day: "numeric",
@@ -667,37 +671,19 @@ function StepDate({
           </button>
         </div>
 
-        <div className="mt-5 grid grid-cols-7 gap-1 text-center">
-          {calendarWeekdays.map((weekday) => (
-            <span className="py-2 text-xs font-semibold uppercase text-slate-400" key={weekday}>
-              {weekday}
-            </span>
-          ))}
-          {calendarDays.map((day) => {
-            const dateValue = toDateValue(day);
-            const isCurrentMonth = day.getMonth() === visibleMonth.getMonth();
-            const isAvailable = isCurrentMonth && !isPastDate(dateValue) && getAllowedSlots(dateValue).length > 0;
-            const isSelected = dateValue === form.visitDate;
-
-            return (
-              <button
-                aria-label={new Intl.DateTimeFormat("es-ES", { dateStyle: "full" }).format(day)}
-                className={`focus-ring aspect-square min-h-10 rounded text-sm font-semibold transition ${
-                  isSelected
-                    ? "bg-datum-cyan text-datum-ink"
-                    : isAvailable
-                      ? "text-white hover:bg-white/15"
-                      : "cursor-not-allowed text-slate-600"
-                }`}
-                disabled={!isAvailable}
-                key={dateValue}
-                onClick={() => selectDate(dateValue)}
-                type="button"
-              >
-                {day.getDate()}
-              </button>
-            );
-          })}
+        <div className="mt-5 grid gap-6 lg:grid-cols-2">
+          <CalendarMonth
+            month={visibleMonth}
+            selectedDate={form.visitDate}
+            title={monthLabel}
+            onSelect={selectDate}
+          />
+          <CalendarMonth
+            month={nextVisibleMonth}
+            selectedDate={form.visitDate}
+            title={nextMonthLabel}
+            onSelect={selectDate}
+          />
         </div>
       </div>
 
@@ -732,6 +718,58 @@ function StepDate({
 }
 
 const calendarWeekdays = ["L", "M", "X", "J", "V", "S", "D"];
+
+function CalendarMonth({
+  month,
+  selectedDate,
+  title,
+  onSelect
+}: {
+  month: Date;
+  selectedDate: string;
+  title: string;
+  onSelect: (dateValue: string) => void;
+}) {
+  const calendarDays = getCalendarDays(month);
+
+  return (
+    <div>
+      <p className="mb-3 text-center text-sm font-semibold capitalize text-slate-200">{title}</p>
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {calendarWeekdays.map((weekday) => (
+          <span className="py-2 text-xs font-semibold uppercase text-slate-400" key={weekday}>
+            {weekday}
+          </span>
+        ))}
+        {calendarDays.map((day) => {
+          const dateValue = toDateValue(day);
+          const isCurrentMonth = day.getMonth() === month.getMonth();
+          const isAvailable = isCurrentMonth && !isPastDate(dateValue) && getAllowedSlots(dateValue).length > 0;
+          const isSelected = dateValue === selectedDate;
+
+          return (
+            <button
+              aria-label={new Intl.DateTimeFormat("es-ES", { dateStyle: "full" }).format(day)}
+              className={`focus-ring aspect-square min-h-9 rounded text-sm font-semibold transition ${
+                isSelected
+                  ? "bg-datum-cyan text-datum-ink"
+                  : isAvailable
+                    ? "text-white hover:bg-white/15"
+                    : "cursor-not-allowed text-slate-600"
+              }`}
+              disabled={!isAvailable}
+              key={dateValue}
+              onClick={() => onSelect(dateValue)}
+              type="button"
+            >
+              {day.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function getCalendarDays(month: Date) {
   const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
