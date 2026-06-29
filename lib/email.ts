@@ -12,7 +12,7 @@ export async function sendReservationEmail(_params: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`
     },
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM ?? "DATUM Mediciones <reservas@medicionesdatum.es>",
+      from: process.env.EMAIL_FROM ?? "DATUM Mediciones <info@medicionesdatum.es>",
       to: _params.to,
       subject: _params.subject,
       html: _params.html
