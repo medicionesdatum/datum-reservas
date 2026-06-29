@@ -49,7 +49,8 @@ export async function createSquarePaymentLink(params: {
 
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(`Square payment link failed: ${detail}`);
+    console.error("Square payment link failed", detail);
+    throw new Error("No se pudo generar el enlace de pago. Revisa la configuración de Square.");
   }
 
   const payload = await response.json();
