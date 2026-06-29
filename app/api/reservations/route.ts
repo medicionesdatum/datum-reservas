@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { isValidSlot } from "@/lib/availability";
+import { findUsableDiscount, normalizeDiscountCode } from "@/lib/discount-codes";
 import { sendReservationEmail } from "@/lib/email";
-import { calculateQuote, services } from "@/lib/pricing";
+import { calculateQuote, getPriceRange, services } from "@/lib/pricing";
 import { createSquarePaymentLink } from "@/lib/square";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import type { ReservationInput, ReservationRecord } from "@/lib/types";
@@ -102,11 +103,19 @@ export async function POST(request: Request) {
       }
     }
 
-    const quote = calculateQuote(input);
+    const range = getPriceRange(input.surface);
+    const additionalCount =
+      Math.max(0, input.additionalPlans ?? 0) +
+      Math.max(0, input.additionalSections ?? 0) +
+      Math.max(0, input.additionalElevations ?? 0);
+    const subtotal = range ? range.prices[input.serviceId] + additionalCount * range.additional : 0;
+    const discount = await findUsableDiscount(input.couponCode, subtotal);
+    const quote = calculateQuote({ ...input, discount });
     const reservationId = crypto.randomUUID();
     const createdAt = new Date().toISOString();
     const record: ReservationRecord = {
       ...input,
+      couponCode: discount && input.couponCode ? normalizeDiscountCode(input.couponCode) : undefined,
       id: reservationId,
       createdAt,
       rangeLabel: quote.rangeLabel,
@@ -136,6 +145,21 @@ export async function POST(request: Request) {
     if (supabase) {
       const { error } = await supabase.from("reservations").insert(toDatabase(record));
       if (error) throw error;
+
+      if (record.couponCode) {
+        const { data: coupon } = await supabase
+          .from("discount_codes")
+          .select("id, times_used")
+          .ilike("code", record.couponCode)
+          .maybeSingle();
+
+        if (coupon) {
+          await supabase
+            .from("discount_codes")
+            .update({ times_used: Number(coupon.times_used ?? 0) + 1 })
+            .eq("id", coupon.id);
+        }
+      }
     }
 
     await Promise.allSettled([
@@ -195,7 +219,7 @@ function toDatabase(record: ReservationRecord) {
     visit_time: record.visitTime,
     taxable_base: record.taxableBase,
     discount_amount: record.discountAmount,
-    coupon_code: record.couponCode,
+      coupon_code: record.couponCode ? normalizeDiscountCode(record.couponCode) : null,
     vat: record.vat,
     total: record.total,
     deposit: record.deposit,

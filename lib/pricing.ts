@@ -88,10 +88,7 @@ export const priceRanges = [
   }
 ] as const;
 
-export const demoCoupons: Discount[] = [
-  { code: "DATUM10", type: "percentage", value: 10 },
-  { code: "MADRID50", type: "fixed", value: 50 }
-];
+export const demoCoupons: Discount[] = [];
 
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat("es-ES", {
@@ -118,6 +115,7 @@ export function calculateQuote(params: {
   additionalSections?: number;
   additionalElevations?: number;
   couponCode?: string;
+  discount?: Discount | null;
 }) {
   const range = getPriceRange(params.surface);
 
@@ -144,7 +142,7 @@ export function calculateQuote(params: {
   const basePrice = range.prices[params.serviceId];
   const additionalTotal = additionalCount * range.additional;
   const subtotal = basePrice + additionalTotal;
-  const discount = resolveDiscount(params.couponCode);
+  const discount = params.discount ?? resolveDiscount(params.couponCode);
   const discountAmount = discount
     ? discount.type === "percentage"
       ? subtotal * (discount.value / 100)

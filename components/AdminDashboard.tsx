@@ -42,7 +42,20 @@ type BlockedSlot = {
   created_at?: string;
 };
 
-type AdminView = "resumen" | "calendario" | "reservas" | "clientes";
+type DiscountCode = {
+  id: string;
+  code: string;
+  type: "percentage" | "fixed";
+  value: number;
+  active: boolean;
+  expires_at?: string | null;
+  max_uses?: number | null;
+  times_used: number;
+  min_taxable_base: number;
+  created_at?: string;
+};
+
+type AdminView = "resumen" | "calendario" | "reservas" | "clientes" | "descuentos";
 
 const statuses = [
   "nueva_solicitud", "pendiente_de_pago", "deposito_pagado", "reserva_confirmada",
@@ -63,7 +76,8 @@ const viewLabels: { id: AdminView; label: string; short: string }[] = [
   { id: "resumen", label: "Resumen", short: "R" },
   { id: "calendario", label: "Calendario", short: "C" },
   { id: "reservas", label: "Reservas", short: "A" },
-  { id: "clientes", label: "Clientes", short: "P" }
+  { id: "clientes", label: "Clientes", short: "P" },
+  { id: "descuentos", label: "Descuentos", short: "%" }
 ];
 
 function formatStatus(status: string) {
@@ -79,6 +93,7 @@ export default function AdminDashboard() {
   const [password, setPassword] = useState("");
   const [reservations, setReservations] = useState<ReservationRow[]>([]);
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
+  const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -89,21 +104,24 @@ export default function AdminDashboard() {
     setIsLoading(true);
     setMessage("");
     const headers = { "x-admin-email": email, "x-admin-password": password };
-    const [reservationResponse, blockResponse] = await Promise.all([
+    const [reservationResponse, blockResponse, discountResponse] = await Promise.all([
       fetch("/api/admin/reservations", { headers }),
-      fetch("/api/admin/blocked-slots", { headers })
+      fetch("/api/admin/blocked-slots", { headers }),
+      fetch("/api/admin/discount-codes", { headers })
     ]);
     const reservationPayload = await reservationResponse.json();
     const blockPayload = await blockResponse.json();
+    const discountPayload = await discountResponse.json();
     setIsLoading(false);
 
-    if (!reservationResponse.ok || !blockResponse.ok) {
-      setMessage(reservationPayload.error ?? blockPayload.error ?? "No se pudo acceder al panel.");
+    if (!reservationResponse.ok || !blockResponse.ok || !discountResponse.ok) {
+      setMessage(reservationPayload.error ?? blockPayload.error ?? discountPayload.error ?? "No se pudo acceder al panel.");
       return;
     }
 
     setReservations(reservationPayload.reservations ?? []);
     setBlockedSlots(blockPayload.blockedSlots ?? []);
+    setDiscountCodes(discountPayload.discountCodes ?? []);
     setSelectedId(reservationPayload.reservations?.[0]?.id ?? "");
     setIsLoaded(true);
     if (reservationPayload.demo) {
@@ -158,6 +176,57 @@ export default function AdminDashboard() {
     setMessage("Horario disponible de nuevo.");
   }
 
+  async function createDiscountCode(input: {
+    code: string;
+    type: "percentage" | "fixed";
+    value: number;
+    expiresAt?: string;
+    maxUses?: number;
+    minTaxableBase?: number;
+  }) {
+    const response = await fetch("/api/admin/discount-codes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-email": email, "x-admin-password": password },
+      body: JSON.stringify(input)
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      setMessage(payload.error ?? "No se pudo crear el código.");
+      return false;
+    }
+    setDiscountCodes((current) => [payload.discountCode, ...current]);
+    setMessage("Código de descuento creado.");
+    return true;
+  }
+
+  async function updateDiscountCode(id: string, update: Partial<DiscountCode>) {
+    const response = await fetch("/api/admin/discount-codes", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-email": email, "x-admin-password": password },
+      body: JSON.stringify({ id, ...update })
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      setMessage(payload.error ?? "No se pudo actualizar el código.");
+      return;
+    }
+    setDiscountCodes((current) => current.map((item) => item.id === id ? payload.discountCode : item));
+    setMessage("Código actualizado.");
+  }
+
+  async function deleteDiscountCode(id: string) {
+    const response = await fetch(`/api/admin/discount-codes?id=${id}`, {
+      method: "DELETE",
+      headers: { "x-admin-email": email, "x-admin-password": password }
+    });
+    if (!response.ok) {
+      setMessage("No se pudo eliminar el código.");
+      return;
+    }
+    setDiscountCodes((current) => current.filter((item) => item.id !== id));
+    setMessage("Código eliminado.");
+  }
+
   if (!isLoaded) {
     return <AdminLogin email={email} password={password} message={message} isLoading={isLoading} onEmailChange={setEmail} onPasswordChange={setPassword} onSubmit={loadDashboard} />;
   }
@@ -202,6 +271,7 @@ export default function AdminDashboard() {
         {view === "calendario" ? <AdminCalendar reservations={reservations} blockedSlots={blockedSlots} onAddBlock={addBlock} onRemoveBlock={removeBlock} /> : null}
         {view === "reservas" ? <ReservationsView reservations={reservations} selectedId={selectedId} onSelect={setSelectedId} onUpdate={updateReservation} email={email} password={password} setMessage={setMessage} /> : null}
         {view === "clientes" ? <ClientsView reservations={reservations} onOpenReservation={(id) => { setSelectedId(id); setView("reservas"); }} /> : null}
+        {view === "descuentos" ? <DiscountCodesView discountCodes={discountCodes} onCreate={createDiscountCode} onUpdate={updateDiscountCode} onDelete={deleteDiscountCode} /> : null}
       </main>
     </div>
   );
@@ -441,6 +511,93 @@ function ClientsView({ reservations, onOpenReservation }: { reservations: Reserv
         <table className="w-full min-w-[760px] text-left text-sm"><thead className="text-xs uppercase text-slate-500"><tr><th className="py-4 pr-4">Cliente</th><th className="px-4 py-4">Contacto</th><th className="px-4 py-4">Reservas</th><th className="px-4 py-4">Facturación</th><th className="px-4 py-4">Última reserva</th><th className="py-4 pl-4"></th></tr></thead><tbody className="divide-y divide-datum-line">{filtered.map((client) => <tr key={client.latest.email}><td className="py-4 pr-4 font-semibold">{client.latest.customer_name}</td><td className="px-4 py-4 text-slate-400"><span className="block">{client.latest.email}</span><span>{client.latest.phone}</span></td><td className="px-4 py-4">{client.items.length}</td><td className="px-4 py-4">{formatCurrency(client.total)}</td><td className="px-4 py-4 text-slate-400">{formatShortDate(client.latest.visit_date)}</td><td className="py-4 pl-4 text-right"><button className="text-datum-cyan" onClick={() => onOpenReservation(client.latest.id)} type="button">Ver ficha</button></td></tr>)}</tbody></table>
         {!filtered.length ? <Empty text="No hay clientes que coincidan con la búsqueda." /> : null}
       </div>
+    </div>
+  );
+}
+
+function DiscountCodesView({
+  discountCodes,
+  onCreate,
+  onUpdate,
+  onDelete
+}: {
+  discountCodes: DiscountCode[];
+  onCreate: (input: { code: string; type: "percentage" | "fixed"; value: number; expiresAt?: string; maxUses?: number; minTaxableBase?: number }) => Promise<boolean>;
+  onUpdate: (id: string, update: Partial<DiscountCode>) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [code, setCode] = useState("");
+  const [type, setType] = useState<"percentage" | "fixed">("percentage");
+  const [value, setValue] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [maxUses, setMaxUses] = useState("");
+  const [minTaxableBase, setMinTaxableBase] = useState("");
+
+  async function submit() {
+    const created = await onCreate({
+      code,
+      type,
+      value: Number(value),
+      expiresAt,
+      maxUses: maxUses ? Number(maxUses) : undefined,
+      minTaxableBase: minTaxableBase ? Number(minTaxableBase) : undefined
+    });
+
+    if (created) {
+      setCode("");
+      setType("percentage");
+      setValue("");
+      setExpiresAt("");
+      setMaxUses("");
+      setMinTaxableBase("");
+    }
+  }
+
+  return (
+    <div className="grid gap-7 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <section className="border-t border-datum-line pt-5">
+        <h2 className="text-lg font-semibold">Nuevo código</h2>
+        <div className="mt-5 space-y-4">
+          <label className="block"><span className="text-sm text-slate-300">Código</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3 uppercase" onChange={(event) => setCode(event.target.value)} placeholder="DATUM10" value={code} /></label>
+          <label className="block"><span className="text-sm text-slate-300">Tipo</span><select className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" onChange={(event) => setType(event.target.value as "percentage" | "fixed")} value={type}><option value="percentage">Porcentaje</option><option value="fixed">Importe fijo</option></select></label>
+          <label className="block"><span className="text-sm text-slate-300">Valor</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" min="0" onChange={(event) => setValue(event.target.value)} placeholder={type === "percentage" ? "10" : "50"} type="number" value={value} /></label>
+          <label className="block"><span className="text-sm text-slate-300">Válido hasta</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" onChange={(event) => setExpiresAt(event.target.value)} type="date" value={expiresAt} /></label>
+          <label className="block"><span className="text-sm text-slate-300">Límite de usos</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" min="1" onChange={(event) => setMaxUses(event.target.value)} placeholder="Sin límite" type="number" value={maxUses} /></label>
+          <label className="block"><span className="text-sm text-slate-300">Base mínima</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" min="0" onChange={(event) => setMinTaxableBase(event.target.value)} placeholder="0" type="number" value={minTaxableBase} /></label>
+          <button className="w-full rounded bg-datum-cyan px-4 py-3 font-semibold text-datum-ink" onClick={submit} type="button">Crear código</button>
+        </div>
+      </section>
+
+      <section className="border-t border-datum-line pt-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Códigos activos e históricos</h2>
+            <p className="mt-1 text-sm text-slate-400">Los códigos se aplican antes del IVA.</p>
+          </div>
+          <p className="text-sm text-slate-400">{discountCodes.length} códigos</p>
+        </div>
+        <div className="mt-5 overflow-x-auto">
+          <table className="w-full min-w-[840px] text-left text-sm">
+            <thead className="text-xs uppercase text-slate-500"><tr><th className="py-4 pr-4">Código</th><th className="px-4 py-4">Descuento</th><th className="px-4 py-4">Uso</th><th className="px-4 py-4">Vence</th><th className="px-4 py-4">Estado</th><th className="py-4 pl-4 text-right">Acciones</th></tr></thead>
+            <tbody className="divide-y divide-datum-line">
+              {discountCodes.map((item) => (
+                <tr key={item.id}>
+                  <td className="py-4 pr-4 font-semibold">{item.code}</td>
+                  <td className="px-4 py-4 text-slate-300">{item.type === "percentage" ? `${item.value}%` : formatCurrency(Number(item.value))}</td>
+                  <td className="px-4 py-4 text-slate-400">{item.times_used}{item.max_uses ? ` / ${item.max_uses}` : ""}</td>
+                  <td className="px-4 py-4 text-slate-400">{item.expires_at ? formatShortDate(item.expires_at.slice(0, 10)) : "Sin vencimiento"}</td>
+                  <td className="px-4 py-4"><span className={`rounded px-2 py-1 text-xs ${item.active ? "bg-cyan-400/15 text-cyan-200" : "bg-rose-400/10 text-rose-200"}`}>{item.active ? "Activo" : "Inactivo"}</span></td>
+                  <td className="py-4 pl-4 text-right">
+                    <button className="mr-4 text-datum-cyan" onClick={() => onUpdate(item.id, { active: !item.active })} type="button">{item.active ? "Desactivar" : "Activar"}</button>
+                    <button className="text-rose-200" onClick={() => onDelete(item.id)} type="button">Eliminar</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!discountCodes.length ? <Empty text="Todavía no hay códigos de descuento." /> : null}
+        </div>
+      </section>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { getAllowedSlots, isPastDate, nextBusinessDate } from "@/lib/availability";
 import { calculateQuote, formatCurrency, services } from "@/lib/pricing";
-import type { RepresentationType, ReservationInput, ServiceId } from "@/lib/types";
+import type { Discount, RepresentationType, ReservationInput, ServiceId } from "@/lib/types";
 
 const steps = [
   "Servicio",
@@ -67,8 +67,10 @@ export default function BookingFlow() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [unavailableSlots, setUnavailableSlots] = useState<string[]>([]);
   const [availabilityDate, setAvailabilityDate] = useState("");
+  const [discount, setDiscount] = useState<Discount | null>(null);
+  const [discountMessage, setDiscountMessage] = useState("");
 
-  const quote = useMemo(() => calculateQuote(form), [form]);
+  const quote = useMemo(() => calculateQuote({ ...form, discount }), [form, discount]);
   const allowedSlots = useMemo(
     () =>
       getAllowedSlots(form.visitDate).filter(
@@ -103,6 +105,47 @@ export default function BookingFlow() {
       setForm((current) => ({ ...current, visitTime: allowedSlots[0] ?? "" }));
     }
   }, [allowedSlots, availabilityDate, form.visitDate, form.visitTime]);
+
+  useEffect(() => {
+    const code = form.couponCode?.trim();
+    if (!code) {
+      setDiscount(null);
+      setDiscountMessage("");
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams({
+        code,
+        serviceId: form.serviceId,
+        surface: String(form.surface),
+        additionalPlans: String(form.additionalPlans),
+        additionalSections: String(form.additionalSections),
+        additionalElevations: String(form.additionalElevations)
+      });
+
+      fetch(`/api/discount-codes?${params.toString()}`, { signal: controller.signal })
+        .then((response) => response.json())
+        .then((payload) => {
+          setDiscount(payload.discount ?? null);
+          setDiscountMessage(payload.discount ? "Código aplicado." : "Código no válido o no disponible.");
+        })
+        .catch(() => null);
+    }, 300);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [
+    form.additionalElevations,
+    form.additionalPlans,
+    form.additionalSections,
+    form.couponCode,
+    form.serviceId,
+    form.surface
+  ]);
 
   function patchForm(update: Partial<ReservationInput>) {
     setForm((current) => ({ ...current, ...update }));
@@ -306,10 +349,12 @@ export default function BookingFlow() {
 
           {step === 6 ? (
             <StepPayment
-              form={form}
-              additionalCount={additionalCount}
-              onChange={patchForm}
-            />
+          form={form}
+          additionalCount={additionalCount}
+          discountMessage={discountMessage}
+          quote={quote}
+          onChange={patchForm}
+        />
           ) : null}
 
           {error ? (
@@ -824,14 +869,16 @@ function StepCustomer({
 function StepPayment({
   form,
   additionalCount,
+  discountMessage,
+  quote,
   onChange
 }: {
   form: ReservationInput;
   additionalCount: number;
+  discountMessage: string;
+  quote: ReturnType<typeof calculateQuote>;
   onChange: (update: Partial<ReservationInput>) => void;
 }) {
-  const quote = calculateQuote(form);
-
   return (
     <section>
       <h2 className="text-2xl font-semibold">Resumen y pago</h2>
@@ -858,6 +905,9 @@ function StepPayment({
           placeholder="Escribe aquí tu código"
           value={form.couponCode}
         />
+        {discountMessage ? (
+          <span className="mt-2 block text-sm text-slate-300">{discountMessage}</span>
+        ) : null}
       </label>
       <label className="mt-5 flex gap-3 text-sm text-slate-200">
         <input

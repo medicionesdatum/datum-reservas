@@ -84,3 +84,28 @@ on public.square_webhook_events
 for all
 using (auth.role() = 'service_role')
 with check (auth.role() = 'service_role');
+
+create table if not exists public.discount_codes (
+  id uuid primary key default gen_random_uuid(),
+  code text not null,
+  type text not null check (type in ('percentage', 'fixed')),
+  value numeric not null check (value > 0),
+  active boolean not null default true,
+  starts_at timestamptz,
+  expires_at timestamptz,
+  max_uses integer check (max_uses is null or max_uses > 0),
+  times_used integer not null default 0 check (times_used >= 0),
+  min_taxable_base numeric not null default 0 check (min_taxable_base >= 0),
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists discount_codes_code_unique_idx
+on public.discount_codes (upper(code));
+
+alter table public.discount_codes enable row level security;
+
+create policy "Service role manages discount codes"
+on public.discount_codes
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
