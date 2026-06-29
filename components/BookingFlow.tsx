@@ -404,8 +404,8 @@ export default function BookingFlow() {
               Horario de atención
             </h2>
             <div className="mt-5 space-y-3 text-sm leading-6 text-slate-300">
-              <p><strong className="block text-white">Lunes a jueves</strong>09:00 - 13:00 y 15:00 - 18:00</p>
-              <p><strong className="block text-white">Viernes</strong>09:00 - 15:00</p>
+              <p><strong className="block text-white">Lunes a jueves</strong>08:30 - 17:00</p>
+              <p><strong className="block text-white">Viernes</strong>08:30 - 14:00</p>
             </div>
           </div>
 
@@ -414,8 +414,8 @@ export default function BookingFlow() {
               Contacto
             </h2>
             <address className="mt-5 space-y-3 text-sm not-italic leading-6 text-slate-300">
-              <a className="datum-contact-link" href="tel:+34613676524">+34 613 676 524</a>
-              <a className="datum-contact-link" href="tel:+34915271501">+34 915 271 501</a>
+              <a aria-label="Llamar a DATUM al +34 613 676 524" className="datum-contact-link" href="tel:+34613676524">+34 613 676 524</a>
+              <a aria-label="Llamar a DATUM al +34 915 271 501" className="datum-contact-link" href="tel:+34915271501">+34 915 271 501</a>
               <a className="datum-contact-link" href="mailto:info@medicionesdatum.es">info@medicionesdatum.es</a>
               <a
                 className="datum-contact-link max-w-xs"
