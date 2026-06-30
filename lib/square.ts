@@ -4,7 +4,7 @@ export async function createSquarePaymentLink(params: {
   amountInCents: number;
   kind: "deposit" | "final";
 }) {
-  const token = process.env.SQUARE_ACCESS_TOKEN?.trim();
+  const token = process.env.SQUARE_ACCESS_TOKEN?.trim().replace(/^Bearer\s+/i, "");
   const locationId = process.env.SQUARE_LOCATION_ID?.trim();
   const environment = (process.env.SQUARE_ENVIRONMENT ?? "sandbox").trim().toLowerCase();
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").trim();
