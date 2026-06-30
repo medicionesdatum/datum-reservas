@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
+import { normalizeDiscountCode } from "@/lib/discount-codes";
+import { sendReservationEmail } from "@/lib/email";
+import {
+  adminConfirmedReservationEmail,
+  customerReservationConfirmedEmail,
+  notificationEmails,
+  reservationFromDatabase
+} from "@/lib/reservation-emails";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 async function verifySquareSignature(request: Request, body: string) {
@@ -83,7 +91,7 @@ export async function POST(request: Request) {
 
   const { data: reservation, error: reservationError } = await supabase
     .from("reservations")
-    .select("deposit, pending_balance")
+    .select("*")
     .eq("id", reservationId)
     .single();
 
@@ -98,6 +106,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Payment amount mismatch" }, { status: 409 });
   }
 
+  const wasAlreadyPaid =
+    kind === "deposit"
+      ? reservation.payment_status === "deposito_pagado" || reservation.payment_status === "pagado_completo"
+      : reservation.payment_status === "pagado_completo";
   const update =
     kind === "deposit"
       ? {
@@ -128,6 +140,44 @@ export async function POST(request: Request) {
       payment_id: payment.id,
       reservation_id: reservationId
     });
+  }
+
+  if (kind === "deposit" && !wasAlreadyPaid) {
+    if (reservation.coupon_code) {
+      const couponCode = normalizeDiscountCode(String(reservation.coupon_code));
+      const { data: coupon } = await supabase
+        .from("discount_codes")
+        .select("id, times_used")
+        .ilike("code", couponCode)
+        .maybeSingle();
+
+      if (coupon) {
+        await supabase
+          .from("discount_codes")
+          .update({ times_used: Number(coupon.times_used ?? 0) + 1 })
+          .eq("id", coupon.id);
+      }
+    }
+
+    const emailRecord = reservationFromDatabase({
+      ...reservation,
+      payment_status: update.payment_status,
+      operational_status: update.operational_status,
+      deposit_square_reference: payment.id
+    });
+
+    await Promise.allSettled([
+      sendReservationEmail({
+        to: emailRecord.email,
+        subject: "Reserva confirmada - DATUM Mediciones",
+        html: customerReservationConfirmedEmail(emailRecord)
+      }),
+      sendReservationEmail({
+        to: notificationEmails(),
+        subject: `Reserva confirmada DATUM - ${emailRecord.visitDate} ${emailRecord.visitTime}`,
+        html: adminConfirmedReservationEmail(emailRecord)
+      })
+    ]);
   }
 
   return NextResponse.json({ received: true });
