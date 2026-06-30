@@ -4,10 +4,10 @@ export async function createSquarePaymentLink(params: {
   amountInCents: number;
   kind: "deposit" | "final";
 }) {
-  const token = process.env.SQUARE_ACCESS_TOKEN;
-  const locationId = process.env.SQUARE_LOCATION_ID;
-  const environment = process.env.SQUARE_ENVIRONMENT ?? "sandbox";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const token = process.env.SQUARE_ACCESS_TOKEN?.trim();
+  const locationId = process.env.SQUARE_LOCATION_ID?.trim();
+  const environment = (process.env.SQUARE_ENVIRONMENT ?? "sandbox").trim().toLowerCase();
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").trim();
 
   if (!token || !locationId) {
     return {
@@ -49,7 +49,12 @@ export async function createSquarePaymentLink(params: {
 
   if (!response.ok) {
     const detail = await response.text();
-    console.error("Square payment link failed", detail);
+    console.error("Square payment link failed", {
+      detail,
+      environment,
+      locationId,
+      hasToken: Boolean(token)
+    });
     throw new Error("No se pudo generar el enlace de pago. Revisa la configuración de Square.");
   }
 
