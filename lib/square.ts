@@ -64,3 +64,39 @@ export async function createSquarePaymentLink(params: {
     squareReference: payload.payment_link?.id as string
   };
 }
+
+export async function listSquareLocations() {
+  const token = process.env.SQUARE_ACCESS_TOKEN?.trim().replace(/^Bearer\s+/i, "");
+  const environment = (process.env.SQUARE_ENVIRONMENT ?? "sandbox").trim().toLowerCase();
+
+  if (!token) {
+    return { locations: [], error: "Falta SQUARE_ACCESS_TOKEN." };
+  }
+
+  const host =
+    environment === "production"
+      ? "https://connect.squareup.com"
+      : "https://connect.squareupsandbox.com";
+
+  const response = await fetch(`${host}/v2/locations`, {
+    headers: {
+      "Content-Type": "application/json",
+      "Square-Version": "2026-05-20",
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    return { locations: [], error: await response.text() };
+  }
+
+  const payload = await response.json();
+  return {
+    locations: (payload.locations ?? []).map((location: { id: string; name?: string; status?: string }) => ({
+      id: location.id,
+      name: location.name ?? "Sin nombre",
+      status: location.status ?? ""
+    })),
+    error: null
+  };
+}
