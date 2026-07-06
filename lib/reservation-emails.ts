@@ -102,23 +102,48 @@ function reservationDetails(record: ReservationEmailRecord) {
 }
 
 export function customerReservationConfirmedEmail(record: ReservationEmailRecord) {
-  const service = services[record.serviceId] ?? services.point_cloud;
-
   return `
     <div style="font-family:Arial,sans-serif;color:#102033;line-height:1.6">
-      <h1 style="color:#071729">Reserva confirmada</h1>
-      <p>Hola ${escapeHtml(record.customerName)},</p>
-      <p>Hemos confirmado el pago del depósito para <strong>${escapeHtml(service.name)}</strong>.</p>
+      <h1 style="color:#071729">Gracias por reservar con DATUM</h1>
+      <p>Estimado/a ${escapeHtml(record.customerName)},</p>
+      <p>Hemos confirmado el pago del depósito y tu reserva ha quedado registrada correctamente.</p>
       ${reservationDetails(record)}
-      <h2 style="color:#071729">Antes de tu medición</h2>
+
+      <h2 style="color:#071729">Política de cambio de fecha</h2>
+      <p>
+        Podrás solicitar un cambio de día hasta 48 horas antes de la cita.
+        Una vez transcurrido ese plazo, cualquier modificación deberá coordinarse
+        directamente con DATUM para valorar la disponibilidad y las alternativas posibles.
+      </p>
+
+      <h2 style="color:#071729">Consideraciones previas a la medición</h2>
+      <p>
+        Con el fin de garantizar una medición eficiente y de calidad, le trasladamos
+        una serie de requisitos previos que deberán estar garantizados el día de la visita:
+      </p>
+
+      <h3 style="color:#071729">Accesos y apertura del espacio</h3>
       <ul>
-        <li>Procura que el inmueble esté accesible en todas las estancias que deban medirse.</li>
-        <li>Retira, cuando sea posible, obstáculos delante de paredes, ventanas, puertas y zonas técnicas.</li>
-        <li>Ten disponibles llaves, permisos de acceso, portería o contacto de la persona que recibirá al técnico.</li>
-        <li>Si hay zonas comunitarias, terrazas, trasteros o garajes que deban incluirse, indícalo antes de la visita.</li>
-        <li>Podrás solicitar un cambio de día hasta 48 horas antes de la cita.</li>
-        <li>Si ya faltan menos de 48 horas, cualquier modificación deberá coordinarse directamente con DATUM.</li>
+        <li>Todas las zonas a medir deberán estar accesibles y libres de obstáculos que impidan la circulación o la toma de datos.</li>
+        <li>Se deberá disponer de las llaves o medios de apertura necesarios para acceder a puertas, cierres, trasteros, cuartos de instalaciones o cualquier otro espacio que forme parte de la medición.</li>
+        <li>En caso de que la medición incluya zonas comunes del edificio, como escaleras, patios o garajes, deberá garantizarse el acceso inmediato a las mismas.</li>
       </ul>
+
+      <h3 style="color:#071729">Condiciones del espacio</h3>
+      <ul>
+        <li>Los espacios deberán contar con iluminación suficiente.</li>
+        <li>En caso de que existan zonas sin luz o totalmente a oscuras, deberá comunicarse con antelación para que el equipo pueda disponer del material adecuado.</li>
+      </ul>
+
+      <h3 style="color:#071729">Consideración general</h3>
+      <p>
+        El cumplimiento de estas condiciones es fundamental para garantizar una
+        medición continua, sin interrupciones y con el máximo nivel de precisión.
+        En caso de que alguna de ellas no pueda cumplirse el día de la visita, le
+        rogamos que nos lo comunique previamente para poder valorar alternativas
+        o reprogramar si fuera necesario.
+      </p>
+
       <p>Nuestro técnico se contactará contigo para coordinar la medición en la dirección proporcionada.</p>
       <p>Gracias,<br>DATUM Mediciones</p>
     </div>
