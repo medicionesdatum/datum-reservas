@@ -419,6 +419,11 @@ export default function BookingFlow() {
               Una vez confirmado el pago, nuestro técnico se contactará contigo
               para coordinar la medición en la dirección proporcionada.
             </p>
+            <p className="mt-3 text-slate-300">
+              Podrás solicitar un cambio de día hasta 48 horas antes de la cita.
+              Pasado ese plazo, cualquier modificación deberá coordinarse
+              directamente con DATUM.
+            </p>
           </div>
         </aside>
         </section>
@@ -918,7 +923,9 @@ function StepPayment({
         />
         <span>
           Acepto los términos y condiciones, la política de cancelación y la
-          política de privacidad.
+          política de privacidad. Entiendo que puedo solicitar un cambio de día
+          hasta 48 horas antes de la cita; después de ese plazo, deberé
+          contactar directamente con DATUM para coordinar cualquier modificación.
         </span>
       </label>
       <label className="mt-3 flex gap-3 text-sm text-slate-300">

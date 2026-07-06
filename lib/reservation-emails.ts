@@ -116,7 +116,8 @@ export function customerReservationConfirmedEmail(record: ReservationEmailRecord
         <li>Retira, cuando sea posible, obstáculos delante de paredes, ventanas, puertas y zonas técnicas.</li>
         <li>Ten disponibles llaves, permisos de acceso, portería o contacto de la persona que recibirá al técnico.</li>
         <li>Si hay zonas comunitarias, terrazas, trasteros o garajes que deban incluirse, indícalo antes de la visita.</li>
-        <li>Si necesitas reprogramar, responde a este correo lo antes posible.</li>
+        <li>Podrás solicitar un cambio de día hasta 48 horas antes de la cita.</li>
+        <li>Si ya faltan menos de 48 horas, cualquier modificación deberá coordinarse directamente con DATUM.</li>
       </ul>
       <p>Nuestro técnico se contactará contigo para coordinar la medición en la dirección proporcionada.</p>
       <p>Gracias,<br>DATUM Mediciones</p>
