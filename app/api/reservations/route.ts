@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       Math.max(0, input.additionalSections ?? 0) +
       Math.max(0, input.additionalElevations ?? 0);
     const subtotal = range ? range.prices[input.serviceId] + additionalCount * range.additional : 0;
-    const discount = await findUsableDiscount(input.couponCode, subtotal);
+    const discount = await findUsableDiscount(input.couponCode, subtotal, input.email);
     const quote = calculateQuote({ ...input, discount });
     const reservationId = crypto.randomUUID();
     const createdAt = new Date().toISOString();

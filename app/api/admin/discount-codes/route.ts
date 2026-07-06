@@ -52,6 +52,7 @@ export async function POST(request: Request) {
     active: body.active ?? true,
     expires_at: serializeDate(body.expiresAt),
     max_uses: maxUses,
+    one_per_email: Boolean(body.onePerEmail),
     min_taxable_base: minTaxableBase
   };
 
@@ -80,6 +81,8 @@ export async function PATCH(request: Request) {
   if (typeof body.active === "boolean") update.active = body.active;
   if (body.expiresAt !== undefined) update.expires_at = serializeDate(body.expiresAt);
   if (body.maxUses !== undefined) update.max_uses = body.maxUses ? Number(body.maxUses) : null;
+  if (typeof body.onePerEmail === "boolean") update.one_per_email = body.onePerEmail;
+  if (typeof body.one_per_email === "boolean") update.one_per_email = body.one_per_email;
 
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ demo: true, discountCode: { ...body, ...update } });
@@ -110,4 +113,3 @@ export async function DELETE(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ deleted: id });
 }
-

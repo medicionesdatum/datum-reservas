@@ -11,6 +11,7 @@ export type DiscountCodeRow = {
   expires_at?: string | null;
   max_uses?: number | null;
   times_used: number;
+  one_per_email?: boolean | null;
   min_taxable_base: number;
   created_at?: string;
 };
@@ -41,7 +42,26 @@ export function isDiscountUsable(row: DiscountCodeRow, subtotal: number) {
   return true;
 }
 
-export async function findUsableDiscount(code: string | undefined, subtotal: number) {
+export async function hasEmailRedeemedDiscount(discountCodeId: string, email: string | undefined) {
+  if (!email) return false;
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return false;
+
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) return false;
+
+  const { data, error } = await supabase
+    .from("discount_code_redemptions")
+    .select("id")
+    .eq("discount_code_id", discountCodeId)
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+
+  if (error) return false;
+  return Boolean(data);
+}
+
+export async function findUsableDiscount(code: string | undefined, subtotal: number, email?: string) {
   if (!code) return null;
   const supabase = getSupabaseAdmin();
   if (!supabase) return null;
@@ -57,7 +77,7 @@ export async function findUsableDiscount(code: string | undefined, subtotal: num
 
   const row = data as DiscountCodeRow;
   if (!isDiscountUsable(row, subtotal)) return null;
+  if (row.one_per_email && (await hasEmailRedeemedDiscount(row.id, email))) return null;
 
   return rowToDiscount(row);
 }
-

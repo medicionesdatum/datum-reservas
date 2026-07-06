@@ -122,7 +122,8 @@ export default function BookingFlow() {
         surface: String(form.surface),
         additionalPlans: String(form.additionalPlans),
         additionalSections: String(form.additionalSections),
-        additionalElevations: String(form.additionalElevations)
+        additionalElevations: String(form.additionalElevations),
+        email: form.email
       });
 
       fetch(`/api/discount-codes?${params.toString()}`, { signal: controller.signal })
@@ -143,6 +144,7 @@ export default function BookingFlow() {
     form.additionalPlans,
     form.additionalSections,
     form.couponCode,
+    form.email,
     form.serviceId,
     form.surface
   ]);

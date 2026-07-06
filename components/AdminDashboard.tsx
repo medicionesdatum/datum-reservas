@@ -51,6 +51,7 @@ type DiscountCode = {
   expires_at?: string | null;
   max_uses?: number | null;
   times_used: number;
+  one_per_email?: boolean | null;
   min_taxable_base: number;
   created_at?: string;
 };
@@ -182,6 +183,7 @@ export default function AdminDashboard() {
     value: number;
     expiresAt?: string;
     maxUses?: number;
+    onePerEmail?: boolean;
     minTaxableBase?: number;
   }) {
     const response = await fetch("/api/admin/discount-codes", {
@@ -522,7 +524,7 @@ function DiscountCodesView({
   onDelete
 }: {
   discountCodes: DiscountCode[];
-  onCreate: (input: { code: string; type: "percentage" | "fixed"; value: number; expiresAt?: string; maxUses?: number; minTaxableBase?: number }) => Promise<boolean>;
+  onCreate: (input: { code: string; type: "percentage" | "fixed"; value: number; expiresAt?: string; maxUses?: number; onePerEmail?: boolean; minTaxableBase?: number }) => Promise<boolean>;
   onUpdate: (id: string, update: Partial<DiscountCode>) => void;
   onDelete: (id: string) => void;
 }) {
@@ -531,6 +533,7 @@ function DiscountCodesView({
   const [value, setValue] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [maxUses, setMaxUses] = useState("");
+  const [onePerEmail, setOnePerEmail] = useState(false);
   const [minTaxableBase, setMinTaxableBase] = useState("");
 
   async function submit() {
@@ -540,6 +543,7 @@ function DiscountCodesView({
       value: Number(value),
       expiresAt,
       maxUses: maxUses ? Number(maxUses) : undefined,
+      onePerEmail,
       minTaxableBase: minTaxableBase ? Number(minTaxableBase) : undefined
     });
 
@@ -549,6 +553,7 @@ function DiscountCodesView({
       setValue("");
       setExpiresAt("");
       setMaxUses("");
+      setOnePerEmail(false);
       setMinTaxableBase("");
     }
   }
@@ -563,6 +568,7 @@ function DiscountCodesView({
           <label className="block"><span className="text-sm text-slate-300">Valor</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" min="0" onChange={(event) => setValue(event.target.value)} placeholder={type === "percentage" ? "10" : "50"} type="number" value={value} /></label>
           <label className="block"><span className="text-sm text-slate-300">Válido hasta</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" onChange={(event) => setExpiresAt(event.target.value)} type="date" value={expiresAt} /></label>
           <label className="block"><span className="text-sm text-slate-300">Límite de usos</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" min="1" onChange={(event) => setMaxUses(event.target.value)} placeholder="Sin límite" type="number" value={maxUses} /></label>
+          <label className="flex items-start gap-3 rounded border border-datum-line bg-white/[0.03] p-3 text-sm text-slate-200"><input checked={onePerEmail} className="mt-1 size-4" onChange={(event) => setOnePerEmail(event.target.checked)} type="checkbox" /><span><strong className="block text-white">1 uso por cliente</strong>El mismo email solo podrá usar este código una vez.</span></label>
           <label className="block"><span className="text-sm text-slate-300">Base mínima</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" min="0" onChange={(event) => setMinTaxableBase(event.target.value)} placeholder="0" type="number" value={minTaxableBase} /></label>
           <button className="w-full rounded bg-datum-cyan px-4 py-3 font-semibold text-datum-ink" onClick={submit} type="button">Crear código</button>
         </div>
@@ -578,17 +584,19 @@ function DiscountCodesView({
         </div>
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[840px] text-left text-sm">
-            <thead className="text-xs uppercase text-slate-500"><tr><th className="py-4 pr-4">Código</th><th className="px-4 py-4">Descuento</th><th className="px-4 py-4">Uso</th><th className="px-4 py-4">Vence</th><th className="px-4 py-4">Estado</th><th className="py-4 pl-4 text-right">Acciones</th></tr></thead>
+            <thead className="text-xs uppercase text-slate-500"><tr><th className="py-4 pr-4">Código</th><th className="px-4 py-4">Descuento</th><th className="px-4 py-4">Uso</th><th className="px-4 py-4">Cliente</th><th className="px-4 py-4">Vence</th><th className="px-4 py-4">Estado</th><th className="py-4 pl-4 text-right">Acciones</th></tr></thead>
             <tbody className="divide-y divide-datum-line">
               {discountCodes.map((item) => (
                 <tr key={item.id}>
                   <td className="py-4 pr-4 font-semibold">{item.code}</td>
                   <td className="px-4 py-4 text-slate-300">{item.type === "percentage" ? `${item.value}%` : formatCurrency(Number(item.value))}</td>
                   <td className="px-4 py-4 text-slate-400">{item.times_used}{item.max_uses ? ` / ${item.max_uses}` : ""}</td>
+                  <td className="px-4 py-4 text-slate-400">{item.one_per_email ? "1 por email" : "Sin límite"}</td>
                   <td className="px-4 py-4 text-slate-400">{item.expires_at ? formatShortDate(item.expires_at.slice(0, 10)) : "Sin vencimiento"}</td>
                   <td className="px-4 py-4"><span className={`rounded px-2 py-1 text-xs ${item.active ? "bg-cyan-400/15 text-cyan-200" : "bg-rose-400/10 text-rose-200"}`}>{item.active ? "Activo" : "Inactivo"}</span></td>
                   <td className="py-4 pl-4 text-right">
                     <button className="mr-4 text-datum-cyan" onClick={() => onUpdate(item.id, { active: !item.active })} type="button">{item.active ? "Desactivar" : "Activar"}</button>
+                    <button className="mr-4 text-slate-300" onClick={() => onUpdate(item.id, { one_per_email: !item.one_per_email })} type="button">{item.one_per_email ? "Permitir repetir" : "1 por email"}</button>
                     <button className="text-rose-200" onClick={() => onDelete(item.id)} type="button">Eliminar</button>
                   </td>
                 </tr>

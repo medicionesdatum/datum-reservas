@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   const additionalPlans = Number(url.searchParams.get("additionalPlans") ?? 0);
   const additionalSections = Number(url.searchParams.get("additionalSections") ?? 0);
   const additionalElevations = Number(url.searchParams.get("additionalElevations") ?? 0);
+  const email = url.searchParams.get("email") ?? undefined;
 
   if (!code.trim() || !serviceId) {
     return NextResponse.json({ discount: null });
@@ -26,8 +27,7 @@ export async function GET(request: Request) {
     Math.max(0, additionalSections) +
     Math.max(0, additionalElevations);
   const subtotal = range.prices[serviceId] + additionalCount * range.additional;
-  const discount = await findUsableDiscount(code, subtotal);
+  const discount = await findUsableDiscount(code, subtotal, email);
 
   return NextResponse.json({ discount });
 }
-

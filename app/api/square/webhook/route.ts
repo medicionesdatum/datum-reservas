@@ -147,15 +147,27 @@ export async function POST(request: Request) {
       const couponCode = normalizeDiscountCode(String(reservation.coupon_code));
       const { data: coupon } = await supabase
         .from("discount_codes")
-        .select("id, times_used")
+        .select("id, times_used, one_per_email")
         .ilike("code", couponCode)
         .maybeSingle();
 
       if (coupon) {
-        await supabase
-          .from("discount_codes")
-          .update({ times_used: Number(coupon.times_used ?? 0) + 1 })
-          .eq("id", coupon.id);
+        let shouldIncrement = true;
+        if (coupon.one_per_email && reservation.email) {
+          const { error: redemptionError } = await supabase.from("discount_code_redemptions").insert({
+            discount_code_id: coupon.id,
+            reservation_id: reservationId,
+            email: String(reservation.email).trim().toLowerCase()
+          });
+          shouldIncrement = !redemptionError;
+        }
+
+        if (shouldIncrement) {
+          await supabase
+            .from("discount_codes")
+            .update({ times_used: Number(coupon.times_used ?? 0) + 1 })
+            .eq("id", coupon.id);
+        }
       }
     }
 

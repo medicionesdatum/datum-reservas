@@ -95,9 +95,13 @@ create table if not exists public.discount_codes (
   expires_at timestamptz,
   max_uses integer check (max_uses is null or max_uses > 0),
   times_used integer not null default 0 check (times_used >= 0),
+  one_per_email boolean not null default false,
   min_taxable_base numeric not null default 0 check (min_taxable_base >= 0),
   created_at timestamptz not null default now()
 );
+
+alter table public.discount_codes
+add column if not exists one_per_email boolean not null default false;
 
 create unique index if not exists discount_codes_code_unique_idx
 on public.discount_codes (upper(code));
@@ -106,6 +110,25 @@ alter table public.discount_codes enable row level security;
 
 create policy "Service role manages discount codes"
 on public.discount_codes
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+create table if not exists public.discount_code_redemptions (
+  id uuid primary key default gen_random_uuid(),
+  discount_code_id uuid not null references public.discount_codes(id) on delete cascade,
+  reservation_id uuid references public.reservations(id) on delete set null,
+  email text not null,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists discount_code_redemptions_email_unique_idx
+on public.discount_code_redemptions (discount_code_id, lower(email));
+
+alter table public.discount_code_redemptions enable row level security;
+
+create policy "Service role manages discount code redemptions"
+on public.discount_code_redemptions
 for all
 using (auth.role() = 'service_role')
 with check (auth.role() = 'service_role');
