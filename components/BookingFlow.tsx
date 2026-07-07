@@ -72,6 +72,9 @@ export default function BookingFlow() {
 
   const quote = useMemo(() => calculateQuote({ ...form, discount }), [form, discount]);
   const currentStep = steps[step]?.id ?? "service";
+  const visibleSteps = steps
+    .map((item, index) => ({ ...item, index }))
+    .filter((item) => form.serviceId !== "point_cloud" || item.id !== "representation");
   const allowedSlots = useMemo(
     () =>
       getBookableSlots(form.visitDate).filter(
@@ -224,7 +227,21 @@ export default function BookingFlow() {
       return;
     }
 
-    setStep((current) => Math.min(current + 1, steps.length - 1));
+    setStep((current) => {
+      const next = Math.min(current + 1, steps.length - 1);
+      return form.serviceId === "point_cloud" && steps[next]?.id === "representation"
+        ? Math.min(next + 1, steps.length - 1)
+        : next;
+    });
+  }
+
+  function goBack() {
+    setStep((current) => {
+      const previous = Math.max(0, current - 1);
+      return form.serviceId === "point_cloud" && steps[previous]?.id === "representation"
+        ? Math.max(0, previous - 1)
+        : previous;
+    });
   }
 
   async function submitReservation() {
@@ -315,24 +332,28 @@ export default function BookingFlow() {
           </h2>
         </div>
 
-        <section className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1fr_360px]">
+        <section
+          className={`mx-auto grid max-w-7xl gap-6 ${
+            currentStep === "payment" ? "lg:grid-cols-1" : "lg:grid-cols-[1fr_360px]"
+          }`}
+        >
           <div className="rounded-lg border border-datum-line bg-datum-panel/80 p-5 shadow-glow md:p-8">
             <div className="mb-6 flex flex-wrap gap-2">
-              {steps.map((item, index) => (
+              {visibleSteps.map((item, displayIndex) => (
                 <button
                   key={item.id}
                   className={`rounded px-3 py-2 text-xs font-semibold ${
-                    index === step
+                    item.index === step
                       ? "bg-datum-cyan text-datum-ink"
-                      : index < step
+                      : item.index < step
                         ? "bg-white/15 text-white"
                         : "bg-white/5 text-slate-400"
                   }`}
-                  disabled={outsideMadrid && index > 0}
-                  onClick={() => setStep(index)}
+                  disabled={outsideMadrid && item.index > 0}
+                  onClick={() => setStep(item.index)}
                   type="button"
                 >
-                  {index + 1}. {item.label}
+                  {displayIndex + 1}. {item.label}
                 </button>
               ))}
             </div>
@@ -394,7 +415,7 @@ export default function BookingFlow() {
             <button
               className="rounded border border-datum-line px-5 py-3 text-slate-100 transition hover:border-datum-cyan disabled:opacity-40"
               disabled={step === 0}
-              onClick={() => setStep((current) => Math.max(0, current - 1))}
+              onClick={goBack}
               type="button"
             >
               Volver
@@ -421,6 +442,7 @@ export default function BookingFlow() {
           </div>
           </div>
 
+        {currentStep !== "payment" ? (
         <aside className="h-fit rounded-lg border border-datum-line bg-white/8 p-5">
           <p className="text-sm uppercase tracking-[0.2em] text-datum-cyan">
             Resumen
@@ -454,6 +476,7 @@ export default function BookingFlow() {
             </p>
           </div>
         </aside>
+        ) : null}
         </section>
       </main>
 
@@ -626,7 +649,8 @@ function StepFeatures({
     <section>
       <h2 className="text-2xl font-semibold">Características</h2>
       <label className="mt-5 block text-sm text-slate-300" htmlFor="surface">
-        Introduce la superficie aproximada del inmueble en m².
+        Introduce la superficie aproximada en m² del inmueble a medir, teniendo
+        en cuenta todas las plantas a representar.
       </label>
       <input
         className="focus-ring mt-2 w-full rounded border border-datum-line bg-white px-4 py-3 text-lg"
@@ -966,7 +990,9 @@ function StepPayment({
           <SummaryLine label="Superficie" value={`${form.surface} m²`} />
           <SummaryLine label="Rango" value={quote.rangeLabel} />
           <SummaryLine label="Extras de representación" value={`${additionalCount}`} />
-          <SummaryLine label="Representación" value={form.representation === "geometria_real" ? "Geometría real" : "Representación ortogonalizada"} />
+          {form.serviceId !== "point_cloud" ? (
+            <SummaryLine label="Representación" value={form.representation === "geometria_real" ? "Geometría real" : "Representación ortogonalizada"} />
+          ) : null}
           <SummaryLine label="Fecha y hora" value={`${form.visitDate} ${form.visitTime}`} />
           <SummaryLine label="Base imponible" value={formatCurrency(quote.taxableBase)} />
           <SummaryLine label="IVA 21%" value={formatCurrency(quote.vat)} />
