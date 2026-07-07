@@ -19,14 +19,35 @@ function validateReservation(input: ReservationInput) {
   if (!input.representation) return "Selecciona una representación.";
   if (!isValidSlot(input.visitDate, input.visitTime)) return "Selecciona un horario disponible.";
   if (!input.customerName || !input.email || !input.phone) return "Completa los datos personales.";
-  if (!input.fullAddress || !input.postalCode) return "Completa los datos del inmueble.";
+  if (!input.fullAddress || !input.street || !input.postalCode) return "Completa los datos del inmueble.";
   if (!input.acceptsTerms) return "Debes aceptar los términos obligatorios.";
   return null;
 }
 
+function normalizeReservationInput(input: ReservationInput): ReservationInput {
+  if (input.serviceId === "point_cloud") {
+    return {
+      ...input,
+      additionalPlans: 0,
+      additionalSections: 0,
+      additionalElevations: 0
+    };
+  }
+
+  if (input.serviceId === "revit_3d") {
+    return {
+      ...input,
+      additionalSections: 0,
+      additionalElevations: 0
+    };
+  }
+
+  return input;
+}
+
 export async function POST(request: Request) {
   try {
-    const input = (await request.json()) as ReservationInput;
+    const input = normalizeReservationInput((await request.json()) as ReservationInput);
     const validationError = validateReservation(input);
 
     if (validationError) {
@@ -71,8 +92,8 @@ export async function POST(request: Request) {
     const range = getPriceRange(input.surface);
     const additionalCount =
       Math.max(0, input.additionalPlans ?? 0) +
-      Math.max(0, input.additionalSections ?? 0) +
-      Math.max(0, input.additionalElevations ?? 0);
+      Math.max(0, input.serviceId === "plans_2d" ? (input.additionalSections ?? 0) : 0) +
+      Math.max(0, input.serviceId === "plans_2d" ? (input.additionalElevations ?? 0) : 0);
     const subtotal = range ? range.prices[input.serviceId] + additionalCount * range.additional : 0;
     const discount = await findUsableDiscount(input.couponCode, subtotal, input.email);
     const quote = calculateQuote({ ...input, discount });

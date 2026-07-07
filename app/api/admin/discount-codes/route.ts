@@ -65,7 +65,12 @@ export async function POST(request: Request) {
     .select("*")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    const message = error.code === "23505" || error.message.includes("discount_codes_code_unique_idx")
+      ? "Este código de descuento ya existe. Puedes editarlo desde la sección Descuentos."
+      : error.message;
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
   return NextResponse.json({ discountCode: data });
 }
 

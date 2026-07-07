@@ -18,8 +18,8 @@ export const services: Record<
     name: "Nube de Puntos 3D",
     shortName: "Nube E57/RCP",
     description:
-      "Captura con escáner láser 3D y entrega de nube de puntos universal para Revit y AutoCAD.",
-    includes: ["E57 universal", "RCP Recap", "Sin planos ni modelo 3D"],
+      "Nube de puntos sin procesar en formato E57 universal y RCP Recap, compatible con Revit y AutoCAD. Ideal si tu estudio modela internamente.",
+    includes: ["E57 universal", "RCP Recap", "No incluye planos 2D o 3D"],
     delivery: "1-2 días hábiles",
     from: 200
   },
@@ -27,8 +27,8 @@ export const services: Record<
     name: "Planos 2D Estado Actual",
     shortName: "Planos 2D + AutoCAD",
     description:
-      "Nube de puntos, plantas acotadas, superficies por estancia, secciones y alzados.",
-    includes: ["DXF/DWG editable", "PDF", "1 planta, 1 sección y 1 alzado"],
+      "Servicio nube de puntos E57 y RCP, plantas acotadas con superficies por estancia, secciones y alzados.",
+    includes: ["DXF/DWG editable + PDF", "Incluye 1 planta", "Incluye 1 sección y 1 alzado de fachada"],
     delivery: "2-3 días hábiles",
     from: 350
   },
@@ -36,7 +36,7 @@ export const services: Record<
     name: "Modelo 3D Revit",
     shortName: "Modelo 3D Revit",
     description:
-      "Modelo BIM en Revit con elementos medidos, áreas y volúmenes a partir de una nube de puntos.",
+      "Servicio premium: nube de puntos E57 y RCP, modelo 3D en Revit con elementos medidos, áreas y volúmenes.",
     includes: ["RVT/IFC", "DXF/DWG + PDF", "Incluye 1 planta"],
     delivery: "3-5 días hábiles",
     from: 700
@@ -135,10 +135,13 @@ export function calculateQuote(params: {
     };
   }
 
+  const additionalPlans = params.serviceId === "point_cloud" ? 0 : params.additionalPlans;
+  const additionalSections = params.serviceId === "plans_2d" ? params.additionalSections : 0;
+  const additionalElevations = params.serviceId === "plans_2d" ? params.additionalElevations : 0;
   const additionalCount =
-    Math.max(0, params.additionalPlans ?? 0) +
-    Math.max(0, params.additionalSections ?? 0) +
-    Math.max(0, params.additionalElevations ?? 0);
+    Math.max(0, additionalPlans ?? 0) +
+    Math.max(0, additionalSections ?? 0) +
+    Math.max(0, additionalElevations ?? 0);
   const basePrice = range.prices[params.serviceId];
   const additionalTotal = additionalCount * range.additional;
   const subtotal = basePrice + additionalTotal;

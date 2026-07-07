@@ -144,7 +144,7 @@ export function customerReservationConfirmedEmail(record: ReservationEmailRecord
         o reprogramar si fuera necesario.
       </p>
 
-      <p>Nuestro técnico se contactará contigo para coordinar la medición en la dirección proporcionada.</p>
+      <p>Nuestro técnico contactará contigo para coordinar la medición en la dirección proporcionada.</p>
       <p>Gracias,<br>DATUM Mediciones</p>
     </div>
   `;

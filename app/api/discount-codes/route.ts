@@ -22,10 +22,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ discount: null });
   }
 
+  const normalizedAdditionalPlans = serviceId === "point_cloud" ? 0 : additionalPlans;
+  const normalizedAdditionalSections = serviceId === "plans_2d" ? additionalSections : 0;
+  const normalizedAdditionalElevations = serviceId === "plans_2d" ? additionalElevations : 0;
   const additionalCount =
-    Math.max(0, additionalPlans) +
-    Math.max(0, additionalSections) +
-    Math.max(0, additionalElevations);
+    Math.max(0, normalizedAdditionalPlans) +
+    Math.max(0, normalizedAdditionalSections) +
+    Math.max(0, normalizedAdditionalElevations);
   const subtotal = range.prices[serviceId] + additionalCount * range.additional;
   const discount = await findUsableDiscount(code, subtotal, email);
 

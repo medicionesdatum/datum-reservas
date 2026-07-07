@@ -2,19 +2,18 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { getAllowedSlots, isPastDate, nextBusinessDate } from "@/lib/availability";
+import { getBookableSlots, isPastDate, nextBusinessDate } from "@/lib/availability";
 import { calculateQuote, formatCurrency, services } from "@/lib/pricing";
 import type { Discount, RepresentationType, ReservationInput, ServiceId } from "@/lib/types";
 
 const steps = [
-  "Servicio",
-  "Superficie",
-  "Adicionales",
-  "Representación",
-  "Fecha",
-  "Datos",
-  "Pago"
-];
+  { id: "service", label: "Servicio" },
+  { id: "features", label: "Características" },
+  { id: "representation", label: "Representación" },
+  { id: "customer", label: "Datos" },
+  { id: "date", label: "Fecha" },
+  { id: "payment", label: "Pago" }
+] as const;
 
 const representations: {
   id: RepresentationType;
@@ -69,17 +68,22 @@ export default function BookingFlow() {
   const [availabilityDate, setAvailabilityDate] = useState("");
   const [discount, setDiscount] = useState<Discount | null>(null);
   const [discountMessage, setDiscountMessage] = useState("");
+  const [outsideMadrid, setOutsideMadrid] = useState(false);
 
   const quote = useMemo(() => calculateQuote({ ...form, discount }), [form, discount]);
+  const currentStep = steps[step]?.id ?? "service";
   const allowedSlots = useMemo(
     () =>
-      getAllowedSlots(form.visitDate).filter(
+      getBookableSlots(form.visitDate).filter(
         (slot) => !unavailableSlots.includes(`${form.visitDate}|${slot}`)
       ),
     [form.visitDate, unavailableSlots]
   );
   const additionalCount =
-    form.additionalPlans + form.additionalSections + form.additionalElevations;
+    form.serviceId === "point_cloud"
+      ? 0
+      : form.additionalPlans +
+        (form.serviceId === "plans_2d" ? form.additionalSections + form.additionalElevations : 0);
 
   useEffect(() => {
     let isCurrent = true;
@@ -154,34 +158,59 @@ export default function BookingFlow() {
     setError("");
   }
 
+  function selectService(serviceId: ServiceId) {
+    patchForm({
+      serviceId,
+      ...(serviceId === "point_cloud"
+        ? {
+            additionalPlans: 0,
+            additionalSections: 0,
+            additionalElevations: 0
+          }
+        : {}),
+      ...(serviceId === "revit_3d"
+        ? {
+            additionalSections: 0,
+            additionalElevations: 0
+          }
+        : {})
+    });
+  }
+
   function validateCurrentStep() {
-    if (step === 1 && (!form.surface || form.surface <= 0)) {
+    if (currentStep === "service" && outsideMadrid) {
+      return "Para inmuebles fuera de Madrid ciudad, escríbenos a info@medicionesdatum.es para preparar una propuesta personalizada.";
+    }
+
+    if (currentStep === "features" && (!form.surface || form.surface <= 0)) {
       return "Introduce una superficie válida.";
     }
 
-    if (step === 1 && form.surface > 400) {
+    if (currentStep === "features" && form.surface > 400) {
       return "Para inmuebles superiores a 400 m², el presupuesto se realiza de forma personalizada.";
     }
 
-    if (step === 3 && !form.representation) {
+    if (currentStep === "representation" && !form.representation) {
       return "Selecciona un tipo de representación.";
     }
 
-    if (step === 4) {
+    if (currentStep === "date") {
       if (isPastDate(form.visitDate)) return "No se pueden reservar fechas pasadas.";
-      if (!allowedSlots.includes(form.visitTime)) return "Selecciona un horario disponible.";
+      if (!allowedSlots.includes(form.visitTime)) {
+        return "Selecciona un horario disponible con al menos 24 horas de anticipación.";
+      }
     }
 
-    if (step === 5) {
+    if (currentStep === "customer") {
       if (!form.customerName || !form.email || !form.phone) {
         return "Completa tus datos personales.";
       }
-      if (!form.fullAddress || !form.postalCode || !form.propertyFloors) {
+      if (!form.fullAddress || !form.street || !form.postalCode || !form.propertyFloors) {
         return "Completa los datos del inmueble.";
       }
     }
 
-    if (step === 6 && !form.acceptsTerms) {
+    if (currentStep === "payment" && !form.acceptsTerms) {
       return "Acepta los términos obligatorios antes de pagar.";
     }
 
@@ -287,57 +316,55 @@ export default function BookingFlow() {
         </div>
 
         <section className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1fr_360px]">
-        <div className="rounded-lg border border-datum-line bg-datum-panel/80 p-5 shadow-glow md:p-8">
-          <div className="mb-6 flex flex-wrap gap-2">
-            {steps.map((item, index) => (
-              <button
-                key={item}
-                className={`rounded px-3 py-2 text-xs font-semibold ${
-                  index === step
-                    ? "bg-datum-cyan text-datum-ink"
-                    : index < step
-                      ? "bg-white/15 text-white"
-                      : "bg-white/5 text-slate-400"
-                }`}
-                onClick={() => setStep(index)}
-                type="button"
-              >
-                {index + 1}. {item}
-              </button>
-            ))}
-          </div>
+          <div className="rounded-lg border border-datum-line bg-datum-panel/80 p-5 shadow-glow md:p-8">
+            <div className="mb-6 flex flex-wrap gap-2">
+              {steps.map((item, index) => (
+                <button
+                  key={item.id}
+                  className={`rounded px-3 py-2 text-xs font-semibold ${
+                    index === step
+                      ? "bg-datum-cyan text-datum-ink"
+                      : index < step
+                        ? "bg-white/15 text-white"
+                        : "bg-white/5 text-slate-400"
+                  }`}
+                  disabled={outsideMadrid && index > 0}
+                  onClick={() => setStep(index)}
+                  type="button"
+                >
+                  {index + 1}. {item.label}
+                </button>
+              ))}
+            </div>
 
           {step === 0 ? (
             <StepServices
               value={form.serviceId}
-              onChange={(serviceId) => patchForm({ serviceId })}
+              outsideMadrid={outsideMadrid}
+              onChange={selectService}
+              onOutsideMadridChange={setOutsideMadrid}
             />
           ) : null}
 
           {step === 1 ? (
-            <StepSurface
-              surface={form.surface}
+            <StepFeatures
+              form={form}
               rangeLabel={quote.rangeLabel}
               basePrice={quote.basePrice}
               isCustomQuote={quote.isCustomQuote}
-              onChange={(surface) => patchForm({ surface })}
-            />
-          ) : null}
-
-          {step === 2 ? (
-            <StepAdditionals
-              form={form}
               unitPrice={quote.additionalUnitPrice}
               onChange={patchForm}
             />
           ) : null}
 
-          {step === 3 ? (
+          {step === 2 ? (
             <StepRepresentation
               value={form.representation}
               onChange={(representation) => patchForm({ representation })}
             />
           ) : null}
+
+          {step === 3 ? <StepCustomer form={form} onChange={patchForm} /> : null}
 
           {step === 4 ? (
             <StepDate
@@ -347,16 +374,14 @@ export default function BookingFlow() {
             />
           ) : null}
 
-          {step === 5 ? <StepCustomer form={form} onChange={patchForm} /> : null}
-
-          {step === 6 ? (
+          {step === 5 ? (
             <StepPayment
-          form={form}
-          additionalCount={additionalCount}
-          discountMessage={discountMessage}
-          quote={quote}
-          onChange={patchForm}
-        />
+              form={form}
+              additionalCount={additionalCount}
+              discountMessage={discountMessage}
+              quote={quote}
+              onChange={patchForm}
+            />
           ) : null}
 
           {error ? (
@@ -376,7 +401,8 @@ export default function BookingFlow() {
             </button>
             {step < steps.length - 1 ? (
               <button
-                className="rounded bg-datum-cyan px-6 py-3 font-semibold text-datum-ink transition hover:bg-cyan-200"
+                className="rounded bg-datum-cyan px-6 py-3 font-semibold text-datum-ink transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={outsideMadrid}
                 onClick={goNext}
                 type="button"
               >
@@ -393,7 +419,7 @@ export default function BookingFlow() {
               </button>
             )}
           </div>
-        </div>
+          </div>
 
         <aside className="h-fit rounded-lg border border-datum-line bg-white/8 p-5">
           <p className="text-sm uppercase tracking-[0.2em] text-datum-cyan">
@@ -405,7 +431,7 @@ export default function BookingFlow() {
           <dl className="mt-5 space-y-3 text-sm">
             <SummaryLine label="Superficie" value={`${form.surface || 0} m²`} />
             <SummaryLine label="Rango" value={quote.rangeLabel || "Pendiente"} />
-            <SummaryLine label="Adicionales" value={`${additionalCount}`} />
+            <SummaryLine label="Extras de representación" value={`${additionalCount}`} />
             <SummaryLine label="Base imponible" value={formatCurrency(quote.taxableBase)} />
             <SummaryLine label="IVA 21%" value={formatCurrency(quote.vat)} />
             <SummaryLine label="Total" value={formatCurrency(quote.total)} strong />
@@ -418,7 +444,7 @@ export default function BookingFlow() {
               contacta en info@medicionesdatum.es.
             </p>
             <p className="mt-3 text-slate-200">
-              Una vez confirmado el pago, nuestro técnico se contactará contigo
+              Una vez confirmado el pago, nuestro técnico contactará contigo
               para coordinar la medición en la dirección proporcionada.
             </p>
             <p className="mt-3 text-slate-300">
@@ -512,11 +538,23 @@ function SocialLink({
 
 function StepServices({
   value,
-  onChange
+  outsideMadrid,
+  onChange,
+  onOutsideMadridChange
 }: {
   value: ServiceId;
+  outsideMadrid: boolean;
   onChange: (serviceId: ServiceId) => void;
+  onOutsideMadridChange: (value: boolean) => void;
 }) {
+  function handleOutsideMadrid(checked: boolean) {
+    onOutsideMadridChange(checked);
+    if (checked) {
+      window.location.href =
+        "mailto:info@medicionesdatum.es?subject=Solicitud%20de%20medici%C3%B3n%20fuera%20de%20Madrid%20ciudad";
+    }
+  }
+
   return (
     <section>
       <h2 className="text-2xl font-semibold">Elige tu servicio</h2>
@@ -536,31 +574,57 @@ function StepServices({
             <p className="mt-3 min-h-24 text-sm leading-6 text-slate-300">
               {service.description}
             </p>
-            <p className="mt-4 text-sm text-datum-cyan">{service.delivery}</p>
+            <ul className="mt-4 space-y-2 text-sm leading-5 text-slate-300">
+              {service.includes.map((item) => (
+                <li className="flex gap-2" key={item}>
+                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-datum-cyan" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-sm text-datum-cyan">Entrega {service.delivery}</p>
             <p className="mt-2 font-semibold">Desde {formatCurrency(service.from)}</p>
           </button>
         ))}
       </div>
+      <label className="mt-6 flex gap-3 rounded-lg border border-datum-line bg-white/5 p-4 text-sm leading-6 text-slate-200">
+        <input
+          checked={outsideMadrid}
+          className="mt-1 size-4"
+          onChange={(event) => handleOutsideMadrid(event.target.checked)}
+          type="checkbox"
+        />
+        <span>
+          Si el inmueble a medir está fuera de Madrid ciudad marca aquí.
+          Al marcarlo se abrirá un correo para solicitar una propuesta
+          personalizada y no podrás continuar con la reserva automática.
+        </span>
+      </label>
     </section>
   );
 }
 
-function StepSurface({
-  surface,
+function StepFeatures({
+  form,
   rangeLabel,
   basePrice,
   isCustomQuote,
+  unitPrice,
   onChange
 }: {
-  surface: number;
+  form: ReservationInput;
   rangeLabel: string;
   basePrice: number;
   isCustomQuote: boolean;
-  onChange: (surface: number) => void;
+  unitPrice: number;
+  onChange: (update: Partial<ReservationInput>) => void;
 }) {
+  const showRepresentationCounts = form.serviceId !== "point_cloud";
+  const showElevationAndSectionCounts = form.serviceId === "plans_2d";
+
   return (
     <section>
-      <h2 className="text-2xl font-semibold">Superficie del inmueble</h2>
+      <h2 className="text-2xl font-semibold">Características</h2>
       <label className="mt-5 block text-sm text-slate-300" htmlFor="surface">
         Introduce la superficie aproximada del inmueble en m².
       </label>
@@ -568,9 +632,9 @@ function StepSurface({
         className="focus-ring mt-2 w-full rounded border border-datum-line bg-white px-4 py-3 text-lg"
         id="surface"
         min="1"
-        onChange={(event) => onChange(Number(event.target.value))}
+        onChange={(event) => onChange({ surface: Number(event.target.value) })}
         type="number"
-        value={surface || ""}
+        value={form.surface || ""}
       />
       {isCustomQuote ? (
         <div className="mt-5 rounded border border-datum-cyan bg-datum-cyan/10 p-5">
@@ -586,43 +650,41 @@ function StepSurface({
           <Metric label="Precio base" value={formatCurrency(basePrice)} />
         </div>
       )}
-    </section>
-  );
-}
 
-function StepAdditionals({
-  form,
-  unitPrice,
-  onChange
-}: {
-  form: ReservationInput;
-  unitPrice: number;
-  onChange: (update: Partial<ReservationInput>) => void;
-}) {
-  return (
-    <section>
-      <h2 className="text-2xl font-semibold">Adicionales</h2>
-      <p className="mt-3 text-slate-300">
-        Añade plantas, secciones o alzados adicionales. Precio unitario según
-        superficie: {formatCurrency(unitPrice)}.
-      </p>
-      <div className="mt-5 grid gap-4 md:grid-cols-3">
-        <Quantity
-          label="Plantas adicionales"
-          value={form.additionalPlans}
-          onChange={(value) => onChange({ additionalPlans: value })}
-        />
-        <Quantity
-          label="Secciones adicionales"
-          value={form.additionalSections}
-          onChange={(value) => onChange({ additionalSections: value })}
-        />
-        <Quantity
-          label="Alzados adicionales"
-          value={form.additionalElevations}
-          onChange={(value) => onChange({ additionalElevations: value })}
-        />
-      </div>
+      {showRepresentationCounts ? (
+        <>
+          <p className="mt-6 text-slate-300">
+            El servicio incluye 1 unidad de cada representación indicada.
+            Cada unidad adicional se cobra según superficie:
+            {" "}
+            <span className="font-semibold text-white">{formatCurrency(unitPrice)}</span>.
+          </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <Quantity
+              label="Número de plantas a representar"
+              min={1}
+              value={form.additionalPlans + 1}
+              onChange={(value) => onChange({ additionalPlans: Math.max(0, value - 1) })}
+            />
+            {showElevationAndSectionCounts ? (
+              <>
+                <Quantity
+                  label="Número de secciones a representar"
+                  min={1}
+                  value={form.additionalSections + 1}
+                  onChange={(value) => onChange({ additionalSections: Math.max(0, value - 1) })}
+                />
+                <Quantity
+                  label="Número de fachadas a representar"
+                  min={1}
+                  value={form.additionalElevations + 1}
+                  onChange={(value) => onChange({ additionalElevations: Math.max(0, value - 1) })}
+                />
+              </>
+            ) : null}
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }
@@ -688,7 +750,7 @@ function StepDate({
   }).format(selectedDate);
 
   function selectDate(dateValue: string) {
-    const slots = getAllowedSlots(dateValue);
+    const slots = getBookableSlots(dateValue);
     onChange({
       visitDate: dateValue,
       visitTime: slots.includes(form.visitTime) ? form.visitTime : (slots[0] ?? "")
@@ -699,7 +761,8 @@ function StepDate({
     <section>
       <h2 className="text-2xl font-semibold">Fecha y hora</h2>
       <p className="mt-2 text-sm text-slate-300">
-        Selecciona un día disponible y después el horario de la visita.
+        Selecciona un día disponible y después el horario de la visita. Las
+        reservas deben hacerse con al menos 24 horas de anticipación.
       </p>
 
       <div className="mt-5 max-w-xl rounded-lg border border-datum-line bg-white/5 p-4 md:p-5">
@@ -796,7 +859,7 @@ function CalendarMonth({
         {calendarDays.map((day) => {
           const dateValue = toDateValue(day);
           const isCurrentMonth = day.getMonth() === month.getMonth();
-          const isAvailable = isCurrentMonth && !isPastDate(dateValue) && getAllowedSlots(dateValue).length > 0;
+          const isAvailable = isCurrentMonth && !isPastDate(dateValue) && getBookableSlots(dateValue).length > 0;
           const isSelected = dateValue === selectedDate;
 
           return (
@@ -849,25 +912,33 @@ function StepCustomer({
 }) {
   return (
     <section>
-      <h2 className="text-2xl font-semibold">Datos del cliente e inmueble</h2>
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <Field label="Nombre completo" value={form.customerName} onChange={(customerName) => onChange({ customerName })} />
-        <Field label="Email" type="email" value={form.email} onChange={(email) => onChange({ email })} />
-        <Field label="Teléfono" value={form.phone} onChange={(phone) => onChange({ phone })} />
-        <Field label="Código postal" value={form.postalCode} onChange={(postalCode) => onChange({ postalCode })} />
-        <Field label="Dirección completa" className="md:col-span-2" value={form.fullAddress} onChange={(fullAddress) => onChange({ fullAddress })} />
-        <Field label="Calle" value={form.street ?? ""} onChange={(street) => onChange({ street })} />
-        <Field label="Número" value={form.number ?? ""} onChange={(number) => onChange({ number })} />
-        <Field label="Piso" value={form.floor ?? ""} onChange={(floor) => onChange({ floor })} />
-        <Field label="Número de plantas" type="number" value={String(form.propertyFloors)} onChange={(propertyFloors) => onChange({ propertyFloors: Number(propertyFloors) })} />
-        <label className="md:col-span-2">
-          <span className="text-sm text-slate-300">Información adicional</span>
-          <textarea
-            className="focus-ring mt-2 min-h-32 w-full rounded border border-datum-line bg-white px-4 py-3"
-            onChange={(event) => onChange({ notes: event.target.value })}
-            value={form.notes}
-          />
-        </label>
+      <h2 className="text-2xl font-semibold">Datos</h2>
+
+      <div className="mt-5">
+        <h3 className="text-lg font-semibold text-white">Datos del inmueble</h3>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <Field label="Dirección" className="md:col-span-2" value={form.fullAddress} onChange={(fullAddress) => onChange({ fullAddress })} />
+          <Field label="Localidad" value={form.street ?? ""} onChange={(street) => onChange({ street })} />
+          <Field label="Código postal" value={form.postalCode} onChange={(postalCode) => onChange({ postalCode })} />
+          <Field label="Cuántas plantas tiene el inmueble" type="number" value={String(form.propertyFloors)} onChange={(propertyFloors) => onChange({ propertyFloors: Number(propertyFloors) })} />
+        </div>
+      </div>
+
+      <div className="mt-7">
+        <h3 className="text-lg font-semibold text-white">Datos de contacto</h3>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <Field label="Nombre completo" value={form.customerName} onChange={(customerName) => onChange({ customerName })} />
+          <Field label="Número de teléfono" value={form.phone} onChange={(phone) => onChange({ phone })} />
+          <Field label="Correo electrónico" type="email" value={form.email} onChange={(email) => onChange({ email })} />
+          <label className="md:col-span-2">
+            <span className="text-sm text-slate-300">Información adicional</span>
+            <textarea
+              className="focus-ring mt-2 min-h-32 w-full rounded border border-datum-line bg-white px-4 py-3"
+              onChange={(event) => onChange({ notes: event.target.value })}
+              value={form.notes}
+            />
+          </label>
+        </div>
       </div>
     </section>
   );
@@ -894,7 +965,7 @@ function StepPayment({
           <SummaryLine label="Servicio" value={services[form.serviceId].name} />
           <SummaryLine label="Superficie" value={`${form.surface} m²`} />
           <SummaryLine label="Rango" value={quote.rangeLabel} />
-          <SummaryLine label="Adicionales" value={`${additionalCount}`} />
+          <SummaryLine label="Extras de representación" value={`${additionalCount}`} />
           <SummaryLine label="Representación" value={form.representation === "geometria_real" ? "Geometría real" : "Representación ortogonalizada"} />
           <SummaryLine label="Fecha y hora" value={`${form.visitDate} ${form.visitTime}`} />
           <SummaryLine label="Base imponible" value={formatCurrency(quote.taxableBase)} />
@@ -971,10 +1042,12 @@ function Field({
 
 function Quantity({
   label,
+  min = 0,
   value,
   onChange
 }: {
   label: string;
+  min?: number;
   value: number;
   onChange: (value: number) => void;
 }) {
@@ -984,7 +1057,7 @@ function Quantity({
       <div className="mt-4 flex items-center justify-between gap-3">
         <button
           className="size-10 rounded border border-datum-line text-xl"
-          onClick={() => onChange(Math.max(0, value - 1))}
+          onClick={() => onChange(Math.max(min, value - 1))}
           type="button"
         >
           -
