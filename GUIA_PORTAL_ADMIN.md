@@ -48,7 +48,7 @@ Muestra:
 
 Acciones disponibles:
 
-- Pulsar una hora libre para bloquearla.
+- Pulsar una hora libre, escribir la razon y confirmar el bloqueo.
 - Liberar un bloqueo existente.
 
 Importante: si una hora tiene reserva, no debe bloquearse manualmente. Si se necesita cambiar una cita, debe gestionarse desde la reserva y con comunicacion directa con el cliente.

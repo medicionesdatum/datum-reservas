@@ -30,12 +30,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Selecciona una fecha y una hora." }, { status: 400 });
   }
 
+  const reason = typeof body.reason === "string" ? body.reason.trim().slice(0, 500) : "";
+
   const supabase = getSupabaseAdmin();
   const demoSlot = {
     id: crypto.randomUUID(),
     visit_date: body.visitDate,
     visit_time: body.visitTime,
-    reason: body.reason ?? "No disponible",
+    reason: reason || "No disponible",
     created_at: new Date().toISOString()
   };
 
@@ -46,7 +48,7 @@ export async function POST(request: Request) {
     .insert({
       visit_date: body.visitDate,
       visit_time: body.visitTime,
-      reason: body.reason ?? "No disponible"
+      reason: reason || "No disponible"
     })
     .select("*")
     .single();

@@ -345,6 +345,9 @@ function Overview({ reservations, blockedSlots, onOpenCalendar }: { reservations
 
 function AdminCalendar({ reservations, blockedSlots, onAddBlock, onRemoveBlock }: { reservations: ReservationRow[]; blockedSlots: BlockedSlot[]; onAddBlock: (date: string, time: string, reason: string) => Promise<boolean>; onRemoveBlock: (id: string) => void }) {
   const [selectedDate, setSelectedDate] = useState(todayValue());
+  const [blockTime, setBlockTime] = useState("");
+  const [blockReason, setBlockReason] = useState("");
+  const [isBlocking, setIsBlocking] = useState(false);
   const initial = new Date(`${selectedDate}T12:00:00`);
   const [month, setMonth] = useState(() => new Date(initial.getFullYear(), initial.getMonth(), 1));
   const days = getCalendarDays(month);
@@ -352,6 +355,27 @@ function AdminCalendar({ reservations, blockedSlots, onAddBlock, onRemoveBlock }
   const dayBlocks = blockedSlots.filter((item) => item.visit_date === selectedDate).sort((a, b) => a.visit_time.localeCompare(b.visit_time));
   const monthLabel = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(month);
   const slots = getAllowedSlots(selectedDate);
+
+  function openBlockForm(time: string) {
+    setBlockTime(time);
+    setBlockReason("");
+  }
+
+  function closeBlockForm() {
+    if (isBlocking) return;
+    setBlockTime("");
+    setBlockReason("");
+  }
+
+  async function submitBlock(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!blockTime) return;
+
+    setIsBlocking(true);
+    const created = await onAddBlock(selectedDate, blockTime, blockReason.trim());
+    setIsBlocking(false);
+    if (created) closeBlockForm();
+  }
 
   return (
     <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -423,7 +447,7 @@ function AdminCalendar({ reservations, blockedSlots, onAddBlock, onRemoveBlock }
                   aria-label={`Bloquear ${slot}`}
                   className="grid min-h-20 w-full grid-cols-[64px_1fr] border-b border-datum-line bg-white/[0.015] text-left transition last:border-b-0 hover:bg-white/[0.06]"
                   key={slot}
-                  onClick={() => onAddBlock(selectedDate, slot, "Bloqueado por administración")}
+                  onClick={() => openBlockForm(slot)}
                   type="button"
                 >
                   <time className="h-full border-r border-datum-line px-3 py-4 text-sm font-semibold text-slate-300">{slot}</time>
@@ -434,6 +458,33 @@ function AdminCalendar({ reservations, blockedSlots, onAddBlock, onRemoveBlock }
           </div>
         ) : <p className="mt-6 rounded border border-datum-line py-8 text-center text-sm text-slate-500">Este día no tiene horario de atención.</p>}
       </aside>
+
+      {blockTime ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#020812]/80 px-4" onMouseDown={(event) => event.target === event.currentTarget && closeBlockForm()}>
+          <section aria-labelledby="block-form-title" aria-modal="true" className="w-full max-w-md rounded border border-datum-line bg-[#0b1929] p-6 shadow-2xl" role="dialog">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-datum-cyan">Nuevo bloqueo</p>
+            <h2 className="mt-2 text-xl font-semibold" id="block-form-title">{formatLongDate(selectedDate)} · {blockTime}</h2>
+            <form className="mt-5" onSubmit={submitBlock}>
+              <label className="block">
+                <span className="text-sm text-slate-300">Razón del bloqueo</span>
+                <textarea
+                  autoFocus
+                  className="focus-ring mt-2 min-h-28 w-full rounded border border-datum-line bg-white px-3 py-3 text-datum-ink"
+                  maxLength={500}
+                  onChange={(event) => setBlockReason(event.target.value)}
+                  placeholder="Ej.: reunión interna, festivo o mantenimiento"
+                  value={blockReason}
+                />
+              </label>
+              <p className="mt-2 text-xs text-slate-500">La razón será visible en la agenda administrativa.</p>
+              <div className="mt-6 flex justify-end gap-3">
+                <button className="rounded border border-datum-line px-4 py-2 text-sm text-slate-300 hover:text-white disabled:opacity-50" disabled={isBlocking} onClick={closeBlockForm} type="button">Cancelar</button>
+                <button className="rounded bg-datum-cyan px-4 py-2 text-sm font-semibold text-datum-ink disabled:opacity-50" disabled={isBlocking} type="submit">{isBlocking ? "Bloqueando..." : "Confirmar bloqueo"}</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
