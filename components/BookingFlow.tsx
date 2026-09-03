@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getBookableSlots, isPastDate, nextBusinessDate } from "@/lib/availability";
 import { calculateQuote, formatCurrency, services } from "@/lib/pricing";
@@ -481,7 +482,7 @@ export default function BookingFlow() {
       </main>
 
       <footer className="border-t border-datum-line bg-[#071321]">
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 md:grid-cols-[1.2fr_1fr_1fr] md:px-8 md:py-16">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 md:grid-cols-2 md:px-8 md:py-16 lg:grid-cols-[1.2fr_0.8fr_0.9fr_1fr]">
           <div>
             <Image
               alt="DATUM"
@@ -509,6 +510,29 @@ export default function BookingFlow() {
               <p><strong className="block text-white">Viernes</strong>08:30 - 14:00</p>
             </div>
           </div>
+
+          <nav aria-label="Información legal y corporativa">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">
+              Información
+            </h2>
+            <div className="mt-5 flex flex-col items-start gap-3 text-sm text-slate-300">
+              <Link className="transition hover:text-datum-cyan" href="/sobre-datum">
+                Sobre DATUM
+              </Link>
+              <Link className="transition hover:text-datum-cyan" href="/contacto">
+                Contacto
+              </Link>
+              <Link className="transition hover:text-datum-cyan" href="/privacidad">
+                Privacidad
+              </Link>
+              <Link className="transition hover:text-datum-cyan" href="/terminos">
+                Términos y condiciones
+              </Link>
+              <Link className="transition hover:text-datum-cyan" href="/politica-cancelacion">
+                Política de cancelación
+              </Link>
+            </div>
+          </nav>
 
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">
