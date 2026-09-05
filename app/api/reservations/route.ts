@@ -1,62 +1,49 @@
 import { NextResponse } from "next/server";
-import { isValidSlot } from "@/lib/availability";
 import { findUsableDiscount, normalizeDiscountCode } from "@/lib/discount-codes";
 import { sendReservationEmail } from "@/lib/email";
+import { expirePendingReservations, paymentExpirationFrom } from "@/lib/pending-reservations";
 import { adminPendingReservationEmail, notificationEmails } from "@/lib/reservation-emails";
 import { calculateQuote, getPriceRange, services } from "@/lib/pricing";
-import { createSquarePaymentLink } from "@/lib/square";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { parseReservationInput } from "@/lib/reservation-validation";
+import { ConfigurationError, getBookingMode } from "@/lib/runtime-config";
+import { createSquarePaymentLink, deleteSquarePaymentLink } from "@/lib/square";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import type { ReservationInput, ReservationRecord } from "@/lib/types";
+import type { ReservationRecord } from "@/lib/types";
 
 function cents(value: number) {
   return Math.round(value * 100);
 }
 
-function validateReservation(input: ReservationInput) {
-  if (!input.serviceId || !services[input.serviceId]) return "Selecciona un servicio válido.";
-  if (!input.surface || input.surface <= 0) return "Introduce una superficie válida.";
-  if (input.surface > 400) return "Los inmuebles de más de 400 m² requieren un presupuesto personalizado.";
-  if (!input.representation) return "Selecciona una representación.";
-  if (!isValidSlot(input.visitDate, input.visitTime)) return "Selecciona un horario disponible.";
-  if (!input.customerName || !input.email || !input.phone) return "Completa los datos personales.";
-  if (!input.fullAddress || !input.street || !input.postalCode) return "Completa los datos del inmueble.";
-  if (!input.acceptsTerms) return "Debes aceptar los términos obligatorios.";
-  return null;
-}
-
-function normalizeReservationInput(input: ReservationInput): ReservationInput {
-  if (input.serviceId === "point_cloud") {
-    return {
-      ...input,
-      additionalPlans: 0,
-      additionalSections: 0,
-      additionalElevations: 0
-    };
-  }
-
-  if (input.serviceId === "revit_3d") {
-    return {
-      ...input,
-      additionalSections: 0,
-      additionalElevations: 0
-    };
-  }
-
-  return input;
-}
-
 export async function POST(request: Request) {
-  try {
-    const input = normalizeReservationInput((await request.json()) as ReservationInput);
-    const validationError = validateReservation(input);
+  const rateLimit = consumeRateLimit(request, {
+    scope: "create-reservation",
+    limit: 8,
+    windowMs: 15 * 60 * 1000
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Has realizado demasiados intentos. Espera unos minutos." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } }
+    );
+  }
 
-    if (validationError) {
-      return NextResponse.json({ error: validationError }, { status: 400 });
-    }
+  let insertedReservationId: string | null = null;
+  let createdPaymentLinkId: string | null = null;
+
+  try {
+    const parsed = parseReservationInput(await request.json());
+    if (!parsed.data) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    const input = parsed.data;
+    const bookingMode = getBookingMode();
 
     const supabase = getSupabaseAdmin();
+    if (bookingMode === "live" && !supabase) {
+      throw new ConfigurationError("No se puede acceder a la base de datos de reservas.");
+    }
 
     if (supabase) {
+      await expirePendingReservations(supabase);
       const { data: blocked, error: blockedError } = await supabase
         .from("blocked_slots")
         .select("id")
@@ -77,7 +64,7 @@ export async function POST(request: Request) {
         .select("id")
         .eq("visit_date", input.visitDate)
         .eq("visit_time", input.visitTime)
-        .not("operational_status", "in", '("cancelado","reprogramado")')
+        .not("operational_status", "in", '("cancelado","reprogramado","pago_caducado")')
         .maybeSingle();
 
       if (duplicateError) throw duplicateError;
@@ -99,6 +86,7 @@ export async function POST(request: Request) {
     const quote = calculateQuote({ ...input, discount });
     const reservationId = crypto.randomUUID();
     const createdAt = new Date().toISOString();
+    const paymentExpiresAt = paymentExpirationFrom();
     const record: ReservationRecord = {
       ...input,
       couponCode: discount && input.couponCode ? normalizeDiscountCode(input.couponCode) : undefined,
@@ -115,21 +103,44 @@ export async function POST(request: Request) {
       deposit: quote.deposit,
       pendingBalance: quote.pendingBalance,
       operationalStatus: "pendiente_de_pago",
-      paymentStatus: "pendiente"
+      paymentStatus: "pendiente",
+      paymentExpiresAt
     };
+
+    if (supabase) {
+      const { error } = await supabase.from("reservations").insert(toDatabase(record));
+      if (error?.code === "23505") {
+        return NextResponse.json(
+          { error: "Este horario acaba de ser reservado. Elige otra franja horaria." },
+          { status: 409 }
+        );
+      }
+      if (error) throw error;
+      insertedReservationId = reservationId;
+    }
 
     const paymentLink = await createSquarePaymentLink({
       reservationId,
       description: `Depósito DATUM - ${services[input.serviceId].name}`,
       amountInCents: cents(quote.deposit),
-      kind: "deposit"
+      kind: "deposit",
+      customerEmail: input.email,
+      customerPhone: input.phone,
+      demo: bookingMode === "demo"
     });
 
     record.depositPaymentLink = paymentLink.checkoutUrl;
-    record.depositSquareReference = paymentLink.squareReference;
+    record.depositSquareReference = paymentLink.paymentLinkId;
+    createdPaymentLinkId = paymentLink.paymentLinkId;
 
     if (supabase) {
-      const { error } = await supabase.from("reservations").insert(toDatabase(record));
+      const { error } = await supabase
+        .from("reservations")
+        .update({
+          deposit_payment_link: record.depositPaymentLink,
+          deposit_square_reference: record.depositSquareReference
+        })
+        .eq("id", reservationId);
       if (error) throw error;
     }
 
@@ -141,17 +152,29 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       reservationId,
-      checkoutUrl: paymentLink.checkoutUrl
+      checkoutUrl: paymentLink.checkoutUrl,
+      expiresAt: paymentExpiresAt
     });
   } catch (error) {
+    const supabase = getSupabaseAdmin();
+    if (createdPaymentLinkId) {
+      await deleteSquarePaymentLink(createdPaymentLinkId).catch(() => null);
+    }
+    if (supabase && insertedReservationId) {
+      await supabase.from("reservations").delete().eq("id", insertedReservationId);
+    }
+
+    const invalidJson = error instanceof SyntaxError;
     return NextResponse.json(
       {
         error:
-          error instanceof Error
+          invalidJson
+            ? "Los datos enviados no contienen un JSON válido."
+            : error instanceof Error
             ? error.message
             : "No se pudo crear la reserva."
       },
-      { status: 500 }
+      { status: invalidJson ? 400 : error instanceof ConfigurationError ? 503 : 500 }
     );
   }
 }
@@ -196,6 +219,7 @@ function toDatabase(record: ReservationRecord) {
     final_square_reference: record.finalSquareReference,
     notes: record.notes,
     internal_notes: record.internalNotes,
-    accepts_marketing: record.acceptsMarketing
+    accepts_marketing: record.acceptsMarketing,
+    payment_expires_at: record.paymentExpiresAt
   };
 }

@@ -31,6 +31,7 @@ create table if not exists public.reservations (
   pending_balance numeric not null,
   payment_status text not null default 'pendiente',
   operational_status text not null default 'pendiente_de_pago',
+  payment_expires_at timestamptz not null default (now() + interval '30 minutes'),
   deposit_payment_link text,
   deposit_square_reference text,
   final_payment_link text,
@@ -40,12 +41,25 @@ create table if not exists public.reservations (
   accepts_marketing boolean not null default false
 );
 
-create unique index if not exists reservations_visit_slot_active_idx
+alter table public.reservations
+add column if not exists payment_expires_at timestamptz;
+
+update public.reservations
+set payment_expires_at = created_at + interval '30 minutes'
+where payment_expires_at is null;
+
+alter table public.reservations
+alter column payment_expires_at set default (now() + interval '30 minutes'),
+alter column payment_expires_at set not null;
+
+drop index if exists public.reservations_visit_slot_active_idx;
+create unique index reservations_visit_slot_active_idx
 on public.reservations (visit_date, visit_time)
-where operational_status not in ('cancelado', 'reprogramado');
+where operational_status not in ('cancelado', 'reprogramado', 'pago_caducado');
 
 alter table public.reservations enable row level security;
 
+drop policy if exists "Service role manages reservations" on public.reservations;
 create policy "Service role manages reservations"
 on public.reservations
 for all
@@ -63,6 +77,7 @@ create table if not exists public.blocked_slots (
 
 alter table public.blocked_slots enable row level security;
 
+drop policy if exists "Service role manages blocked slots" on public.blocked_slots;
 create policy "Service role manages blocked slots"
 on public.blocked_slots
 for all
@@ -79,6 +94,7 @@ create table if not exists public.square_webhook_events (
 
 alter table public.square_webhook_events enable row level security;
 
+drop policy if exists "Service role manages Square webhook events" on public.square_webhook_events;
 create policy "Service role manages Square webhook events"
 on public.square_webhook_events
 for all
@@ -108,6 +124,7 @@ on public.discount_codes (upper(code));
 
 alter table public.discount_codes enable row level security;
 
+drop policy if exists "Service role manages discount codes" on public.discount_codes;
 create policy "Service role manages discount codes"
 on public.discount_codes
 for all
@@ -127,8 +144,23 @@ on public.discount_code_redemptions (discount_code_id, lower(email));
 
 alter table public.discount_code_redemptions enable row level security;
 
+drop policy if exists "Service role manages discount code redemptions" on public.discount_code_redemptions;
 create policy "Service role manages discount code redemptions"
 on public.discount_code_redemptions
 for all
 using (auth.role() = 'service_role')
 with check (auth.role() = 'service_role');
+
+create or replace function public.increment_discount_code_usage(target_id uuid)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.discount_codes
+  set times_used = times_used + 1
+  where id = target_id;
+$$;
+
+revoke all on function public.increment_discount_code_usage(uuid) from public;
+grant execute on function public.increment_discount_code_usage(uuid) to service_role;

@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { isAdminAuthorized } from "@/lib/admin-auth";
 import { normalizeDiscountCode } from "@/lib/discount-codes";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { isDemoModeEnabled } from "@/lib/runtime-config";
 
 function serializeDate(value: unknown) {
   if (!value || typeof value !== "string") return null;
-  return new Date(`${value}T23:59:59`).toISOString();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T23:59:59+02:00`);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 export async function GET(request: Request) {
@@ -14,7 +17,11 @@ export async function GET(request: Request) {
   }
 
   const supabase = getSupabaseAdmin();
-  if (!supabase) return NextResponse.json({ demo: true, discountCodes: [] });
+  if (!supabase) {
+    return isDemoModeEnabled()
+      ? NextResponse.json({ demo: true, discountCodes: [] })
+      : NextResponse.json({ error: "La base de datos no está configurada." }, { status: 503 });
+  }
 
   const { data, error } = await supabase
     .from("discount_codes")
@@ -44,6 +51,12 @@ export async function POST(request: Request) {
   if (type === "percentage" && value > 100) {
     return NextResponse.json({ error: "El porcentaje no puede superar 100%." }, { status: 400 });
   }
+  if (maxUses !== null && (!Number.isInteger(maxUses) || maxUses < 1)) {
+    return NextResponse.json({ error: "El máximo de usos no es válido." }, { status: 400 });
+  }
+  if (!Number.isFinite(minTaxableBase) || minTaxableBase < 0) {
+    return NextResponse.json({ error: "La compra mínima no es válida." }, { status: 400 });
+  }
 
   const record = {
     code,
@@ -57,7 +70,11 @@ export async function POST(request: Request) {
   };
 
   const supabase = getSupabaseAdmin();
-  if (!supabase) return NextResponse.json({ demo: true, discountCode: { id: crypto.randomUUID(), ...record, times_used: 0 } });
+  if (!supabase) {
+    return isDemoModeEnabled()
+      ? NextResponse.json({ demo: true, discountCode: { id: crypto.randomUUID(), ...record, times_used: 0 } })
+      : NextResponse.json({ error: "La base de datos no está configurada." }, { status: 503 });
+  }
 
   const { data, error } = await supabase
     .from("discount_codes")
@@ -88,9 +105,19 @@ export async function PATCH(request: Request) {
   if (body.maxUses !== undefined) update.max_uses = body.maxUses ? Number(body.maxUses) : null;
   if (typeof body.onePerEmail === "boolean") update.one_per_email = body.onePerEmail;
   if (typeof body.one_per_email === "boolean") update.one_per_email = body.one_per_email;
+  if (update.max_uses !== null && update.max_uses !== undefined) {
+    const nextMaxUses = Number(update.max_uses);
+    if (!Number.isInteger(nextMaxUses) || nextMaxUses < 1) {
+      return NextResponse.json({ error: "El máximo de usos no es válido." }, { status: 400 });
+    }
+  }
 
   const supabase = getSupabaseAdmin();
-  if (!supabase) return NextResponse.json({ demo: true, discountCode: { ...body, ...update } });
+  if (!supabase) {
+    return isDemoModeEnabled()
+      ? NextResponse.json({ demo: true, discountCode: { ...body, ...update } })
+      : NextResponse.json({ error: "La base de datos no está configurada." }, { status: 503 });
+  }
 
   const { data, error } = await supabase
     .from("discount_codes")
@@ -112,7 +139,11 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: "Falta el código." }, { status: 400 });
 
   const supabase = getSupabaseAdmin();
-  if (!supabase) return NextResponse.json({ demo: true, deleted: id });
+  if (!supabase) {
+    return isDemoModeEnabled()
+      ? NextResponse.json({ demo: true, deleted: id })
+      : NextResponse.json({ error: "La base de datos no está configurada." }, { status: 503 });
+  }
 
   const { error } = await supabase.from("discount_codes").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatCurrency, services } from "@/lib/pricing";
 import { getAllowedSlots } from "@/lib/availability";
@@ -61,7 +62,7 @@ type AdminView = "resumen" | "calendario" | "reservas" | "clientes" | "descuento
 const statuses = [
   "nueva_solicitud", "pendiente_de_pago", "deposito_pagado", "reserva_confirmada",
   "visita_programada", "medicion_realizada", "en_procesamiento", "pendiente_de_saldo",
-  "pagado_completo", "entregado", "cancelado", "reprogramado"
+    "pagado_completo", "entregado", "pago_caducado", "cancelado", "reprogramado"
 ];
 
 const statusLabels: Record<string, string> = {
@@ -70,7 +71,7 @@ const statusLabels: Record<string, string> = {
   visita_programada: "Visita programada", medicion_realizada: "Medición realizada",
   en_procesamiento: "En procesamiento", pendiente_de_saldo: "Pendiente de saldo",
   pagado_completo: "Pagado por completo", entregado: "Entregado", cancelado: "Cancelado",
-  reprogramado: "Reprogramado", pendiente: "Pendiente"
+    reprogramado: "Reprogramado", pendiente: "Pendiente", pago_caducado: "Pago caducado"
 };
 
 const viewLabels: { id: AdminView; label: string; short: string }[] = [
@@ -241,7 +242,7 @@ export default function AdminDashboard() {
             <p className="text-xl font-semibold tracking-[0.12em]">DATUM<span className="text-datum-cyan">.</span></p>
             <p className="mt-1 text-xs text-slate-400">Centro de operaciones</p>
           </div>
-          <a className="text-xs text-slate-400 hover:text-datum-cyan lg:mt-8 lg:block" href="/">Ver reservas públicas</a>
+          <Link className="text-xs text-slate-400 hover:text-datum-cyan lg:mt-8 lg:block" href="/">Ver reservas públicas</Link>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-4 lg:block lg:space-y-1 lg:px-4">
           {viewLabels.map((item) => (
@@ -303,13 +304,13 @@ function AdminLogin({ email, password, message, isLoading, onEmailChange, onPass
 
 function Overview({ reservations, blockedSlots, onOpenCalendar }: { reservations: ReservationRow[]; blockedSlots: BlockedSlot[]; onOpenCalendar: () => void }) {
   const today = todayValue();
-  const active = reservations.filter((item) => !["cancelado", "reprogramado"].includes(item.operational_status));
+  const active = reservations.filter((item) => !["cancelado", "reprogramado", "pago_caducado"].includes(item.operational_status));
   const todayAppointments = active.filter((item) => item.visit_date === today);
   const upcoming = active.filter((item) => item.visit_date >= today).sort(sortByVisit).slice(0, 6);
   const revenue = reservations.filter((item) => item.payment_status === "pagado_completo").reduce((sum, item) => sum + Number(item.total), 0);
   const deposits = reservations.filter((item) => ["deposito_pagado", "pagado_completo"].includes(item.payment_status)).reduce((sum, item) => sum + Number(item.deposit), 0);
-  const pending = reservations.filter((item) => item.payment_status === "pendiente").length;
-  const conversion = reservations.length ? Math.round((active.filter((item) => item.payment_status !== "pendiente").length / reservations.length) * 100) : 0;
+  const pending = active.filter((item) => item.payment_status === "pendiente").length;
+  const conversion = active.length ? Math.round((active.filter((item) => item.payment_status !== "pendiente").length / active.length) * 100) : 0;
 
   return (
     <div className="space-y-7">
@@ -333,7 +334,7 @@ function Overview({ reservations, blockedSlots, onOpenCalendar }: { reservations
           <h2 className="text-lg font-semibold">Actividad operativa</h2>
           <dl className="mt-4 space-y-4 text-sm">
             <DataLine label="Horarios bloqueados" value={String(blockedSlots.filter((item) => item.visit_date >= today).length)} />
-            <DataLine label="Saldos pendientes" value={formatCurrency(reservations.reduce((sum, item) => item.payment_status === "pagado_completo" ? sum : sum + Number(item.pending_balance), 0))} />
+            <DataLine label="Saldos pendientes" value={formatCurrency(active.reduce((sum, item) => item.payment_status === "pagado_completo" ? sum : sum + Number(item.pending_balance), 0))} />
             <DataLine label="Mediciones realizadas" value={String(reservations.filter((item) => ["medicion_realizada", "en_procesamiento", "entregado"].includes(item.operational_status)).length)} />
             <DataLine label="Trabajos entregados" value={String(reservations.filter((item) => item.operational_status === "entregado").length)} />
           </dl>
@@ -351,7 +352,7 @@ function AdminCalendar({ reservations, blockedSlots, onAddBlock, onRemoveBlock }
   const initial = new Date(`${selectedDate}T12:00:00`);
   const [month, setMonth] = useState(() => new Date(initial.getFullYear(), initial.getMonth(), 1));
   const days = getCalendarDays(month);
-  const dayReservations = reservations.filter((item) => item.visit_date === selectedDate && !["cancelado", "reprogramado"].includes(item.operational_status)).sort(sortByVisit);
+  const dayReservations = reservations.filter((item) => item.visit_date === selectedDate && !["cancelado", "reprogramado", "pago_caducado"].includes(item.operational_status)).sort(sortByVisit);
   const dayBlocks = blockedSlots.filter((item) => item.visit_date === selectedDate).sort((a, b) => a.visit_time.localeCompare(b.visit_time));
   const monthLabel = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(month);
   const slots = getAllowedSlots(selectedDate);
@@ -390,7 +391,7 @@ function AdminCalendar({ reservations, blockedSlots, onAddBlock, onRemoveBlock }
           {days.map((day) => {
             const value = toDateValue(day);
             const current = day.getMonth() === month.getMonth();
-            const appointments = reservations.filter((item) => item.visit_date === value && !["cancelado", "reprogramado"].includes(item.operational_status)).length;
+            const appointments = reservations.filter((item) => item.visit_date === value && !["cancelado", "reprogramado", "pago_caducado"].includes(item.operational_status)).length;
             const blocks = blockedSlots.filter((item) => item.visit_date === value).length;
             return (
               <button className={`min-h-24 bg-[#0b1929] p-2 text-left transition hover:bg-[#10243a] ${selectedDate === value ? "ring-2 ring-inset ring-datum-cyan" : ""} ${current ? "" : "opacity-35"}`} key={value} onClick={() => setSelectedDate(value)} type="button">
@@ -497,7 +498,7 @@ function ReservationsView({ reservations, selectedId, onSelect, onUpdate, email,
 
   async function generateFinalPayment() {
     if (!selected) return;
-    const response = await fetch("/api/admin/final-payment", { method: "POST", headers: { "Content-Type": "application/json", "x-admin-email": email, "x-admin-password": password }, body: JSON.stringify({ id: selected.id, pendingBalance: selected.pending_balance }) });
+    const response = await fetch("/api/admin/final-payment", { method: "POST", headers: { "Content-Type": "application/json", "x-admin-email": email, "x-admin-password": password }, body: JSON.stringify({ id: selected.id }) });
     const payload = await response.json();
     if (!response.ok) return setMessage(payload.error ?? "No se pudo generar el enlace.");
     onUpdate({ final_payment_link: payload.checkoutUrl, operational_status: "pendiente_de_saldo" });

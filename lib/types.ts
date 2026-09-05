@@ -15,6 +15,7 @@ export type ReservationStatus =
   | "pendiente_de_saldo"
   | "pagado_completo"
   | "entregado"
+  | "pago_caducado"
   | "cancelado"
   | "reprogramado";
 
@@ -65,6 +66,7 @@ export type ReservationRecord = ReservationInput & {
   pendingBalance: number;
   operationalStatus: ReservationStatus;
   paymentStatus: PaymentStatus;
+  paymentExpiresAt: string;
   depositPaymentLink?: string;
   depositSquareReference?: string;
   finalPaymentLink?: string;

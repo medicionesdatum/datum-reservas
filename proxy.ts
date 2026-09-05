@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const excludedPrefixes = ["/api/", "/_next/", "/assets/"];
 const excludedFiles = ["/favicon.ico", "/robots.txt", "/sitemap.xml", "/llms.txt"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const accept = request.headers.get("accept") ?? "";
   const { pathname } = request.nextUrl;
 

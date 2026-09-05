@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminAuthorized } from "@/lib/admin-auth";
+import { getAllowedSlots, isPastDate, isValidDateValue } from "@/lib/availability";
+import { isDemoModeEnabled } from "@/lib/runtime-config";
 
 export async function GET(request: Request) {
   if (!isAdminAuthorized(request)) {
@@ -8,7 +10,11 @@ export async function GET(request: Request) {
   }
 
   const supabase = getSupabaseAdmin();
-  if (!supabase) return NextResponse.json({ demo: true, blockedSlots: [] });
+  if (!supabase) {
+    return isDemoModeEnabled()
+      ? NextResponse.json({ demo: true, blockedSlots: [] })
+      : NextResponse.json({ error: "La base de datos no está configurada." }, { status: 503 });
+  }
 
   const { data, error } = await supabase
     .from("blocked_slots")
@@ -26,7 +32,13 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  if (!body.visitDate || !body.visitTime) {
+  if (
+    typeof body.visitDate !== "string" ||
+    typeof body.visitTime !== "string" ||
+    !isValidDateValue(body.visitDate) ||
+    isPastDate(body.visitDate) ||
+    !getAllowedSlots(body.visitDate).includes(body.visitTime)
+  ) {
     return NextResponse.json({ error: "Selecciona una fecha y una hora." }, { status: 400 });
   }
 
@@ -41,7 +53,11 @@ export async function POST(request: Request) {
     created_at: new Date().toISOString()
   };
 
-  if (!supabase) return NextResponse.json({ demo: true, blockedSlot: demoSlot });
+  if (!supabase) {
+    return isDemoModeEnabled()
+      ? NextResponse.json({ demo: true, blockedSlot: demoSlot })
+      : NextResponse.json({ error: "La base de datos no está configurada." }, { status: 503 });
+  }
 
   const { data, error } = await supabase
     .from("blocked_slots")
@@ -66,7 +82,11 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: "Falta el bloqueo." }, { status: 400 });
 
   const supabase = getSupabaseAdmin();
-  if (!supabase) return NextResponse.json({ demo: true, deleted: id });
+  if (!supabase) {
+    return isDemoModeEnabled()
+      ? NextResponse.json({ demo: true, deleted: id })
+      : NextResponse.json({ error: "La base de datos no está configurada." }, { status: 503 });
+  }
 
   const { error } = await supabase.from("blocked_slots").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,9 +1,24 @@
 import { NextResponse } from "next/server";
 import { findUsableDiscount } from "@/lib/discount-codes";
 import { getPriceRange } from "@/lib/pricing";
+import { consumeRateLimit } from "@/lib/rate-limit";
 import type { ServiceId } from "@/lib/types";
 
+const serviceIds = new Set<ServiceId>(["point_cloud", "plans_2d", "revit_3d"]);
+
 export async function GET(request: Request) {
+  const rateLimit = consumeRateLimit(request, {
+    scope: "discount-code",
+    limit: 60,
+    windowMs: 60 * 1000
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Demasiados intentos de descuento." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } }
+    );
+  }
+
   const url = new URL(request.url);
   const code = url.searchParams.get("code") ?? "";
   const serviceId = url.searchParams.get("serviceId") as ServiceId | null;
@@ -13,7 +28,15 @@ export async function GET(request: Request) {
   const additionalElevations = Number(url.searchParams.get("additionalElevations") ?? 0);
   const email = url.searchParams.get("email") ?? undefined;
 
-  if (!code.trim() || !serviceId) {
+  if (!code.trim() || code.length > 64 || !serviceId || !serviceIds.has(serviceId)) {
+    return NextResponse.json({ discount: null });
+  }
+
+  if (
+    ![additionalPlans, additionalSections, additionalElevations].every(
+      (value) => Number.isInteger(value) && value >= 0 && value <= 20
+    )
+  ) {
     return NextResponse.json({ discount: null });
   }
 

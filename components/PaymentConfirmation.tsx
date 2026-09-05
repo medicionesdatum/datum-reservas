@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function PaymentConfirmation({ reservationId, isDemo }: { reservationId: string; isDemo: boolean }) {
-  const [status, setStatus] = useState<"checking" | "confirmed" | "pending" | "error">(isDemo ? "confirmed" : "checking");
+  const [status, setStatus] = useState<"checking" | "confirmed" | "pending" | "expired" | "error">(isDemo ? "confirmed" : "checking");
 
   useEffect(() => {
     if (isDemo || !reservationId) return;
@@ -19,6 +19,10 @@ export default function PaymentConfirmation({ reservationId, isDemo }: { reserva
         if (!response.ok) throw new Error(payload.error);
         if (["deposito_pagado", "pagado_completo"].includes(payload.paymentStatus)) {
           setStatus("confirmed");
+          return;
+        }
+        if (payload.operationalStatus === "pago_caducado") {
+          setStatus("expired");
           return;
         }
         if (attempts < 10) {
@@ -50,6 +54,8 @@ export default function PaymentConfirmation({ reservationId, isDemo }: { reserva
             ? "Hemos recibido tu depósito. El equipo de DATUM se pondrá en contacto contigo para coordinar la medición."
             : status === "pending"
               ? "El pago todavía está pendiente de confirmación. Conserva esta referencia y revisaremos la operación."
+              : status === "expired"
+                ? "El plazo para completar este pago ha caducado y el horario se ha liberado. Vuelve al inicio para realizar una nueva reserva."
               : status === "error"
                 ? "No hemos podido comprobar el pago en este momento. Conserva esta referencia y contacta con DATUM si necesitas ayuda."
                 : "Square está confirmando la operación. Esta comprobación puede tardar unos segundos."}

@@ -1,13 +1,28 @@
 import { NextResponse } from "next/server";
+import { consumeRateLimit } from "@/lib/rate-limit";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET(request: Request) {
+  const rateLimit = consumeRateLimit(request, {
+    scope: "reservation-status",
+    limit: 60,
+    windowMs: 60 * 1000
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Demasiadas comprobaciones." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } }
+    );
+  }
+
   const id = new URL(request.url).searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "Falta la referencia." }, { status: 400 });
+  if (!id || !/^[0-9a-f-]{36}$/i.test(id)) {
+    return NextResponse.json({ error: "Falta una referencia válida." }, { status: 400 });
+  }
 
   const supabase = getSupabaseAdmin();
   if (!supabase) {
-    return NextResponse.json({ paymentStatus: "deposito_pagado", demo: true });
+    return NextResponse.json({ error: "La consulta de reservas no está configurada." }, { status: 503 });
   }
 
   const { data, error } = await supabase
@@ -20,8 +35,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Reserva no encontrada." }, { status: 404 });
   }
 
-  return NextResponse.json({
-    paymentStatus: data.payment_status,
-    operationalStatus: data.operational_status
-  });
+  return NextResponse.json(
+    {
+      paymentStatus: data.payment_status,
+      operationalStatus: data.operational_status
+    },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }

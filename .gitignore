@@ -4,3 +4,5 @@ node_modules
 .env.local
 tsconfig.tsbuildinfo
 npm-debug.log*
+# next-agents-md
+.next-docs/

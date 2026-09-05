@@ -47,6 +47,7 @@ SUPABASE_SECRET_KEY
 SUPABASE_SERVICE_ROLE_KEY
 ADMIN_EMAILS
 ADMIN_PASSWORD
+ALLOW_DEMO_MODE
 RESERVATION_NOTIFICATION_EMAILS
 SQUARE_ACCESS_TOKEN
 SQUARE_LOCATION_ID
@@ -62,6 +63,7 @@ Notas:
 - `SQUARE_ENVIRONMENT`: usar `production` en produccion.
 - `NEXT_PUBLIC_APP_URL`: debe coincidir con la URL publica usada por Square y el webhook.
 - `ADMIN_PASSWORD`: protege el portal `/admin`; no debe compartirse fuera del equipo autorizado.
+- `ALLOW_DEMO_MODE`: solo puede ser `true` en desarrollo. En producción el sistema falla de forma segura si faltan Supabase o Square.
 
 ## Deploy
 
@@ -78,6 +80,7 @@ Antes de operar en produccion, verificar:
 
 - Variables de entorno configuradas en Vercel.
 - Esquema de Supabase ejecutado.
+- Migración `supabase/production-hardening.sql` ejecutada en instalaciones existentes.
 - Webhook de Square apuntando a `/api/square/webhook`.
 - Dominio de Resend verificado para enviar correos.
 
@@ -114,9 +117,10 @@ public/assets/
 - El pago no se confirma por redireccion del usuario. Solo se confirma con el webhook firmado de Square.
 - Las reservas quedan inicialmente como `pendiente_de_pago`.
 - Si Square confirma el deposito, la reserva cambia a `reserva_confirmada` y se envian correos.
-- Si el cliente abandona el checkout, la reserva permanece pendiente y no se envia correo de confirmacion al cliente.
+- Si el cliente abandona el checkout, la reserva pendiente caduca a los 30 minutos y no se envia correo de confirmacion al cliente.
 - Los codigos de descuento se aplican antes del IVA.
 - Los usos de cupones se contabilizan cuando Square confirma el pago, no al iniciar el checkout.
 - La disponibilidad combina reservas existentes y bloqueos administrativos.
 - El admin no tiene sistema de usuarios completo; valida email y clave mediante variables de entorno.
-- Hay modo demo si faltan claves de Supabase o Square, pero no debe usarse para produccion.
+- El modo demo requiere `ALLOW_DEMO_MODE=true` y nunca se activa en producción.
+- Una reserva pendiente mantiene el horario durante 30 minutos. Después se cierra su enlace de Square y el horario vuelve a quedar disponible.

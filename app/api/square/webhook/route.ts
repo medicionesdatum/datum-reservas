@@ -8,14 +8,16 @@ import {
   notificationEmails,
   reservationFromDatabase
 } from "@/lib/reservation-emails";
+import { getAppUrl, isDemoModeEnabled } from "@/lib/runtime-config";
+import { configuredSquareLocationId, parseSquarePaymentNote } from "@/lib/square";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 async function verifySquareSignature(request: Request, body: string) {
   const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
   const signature = request.headers.get("x-square-hmacsha256-signature");
-  const notificationUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/square/webhook`;
+  const notificationUrl = `${getAppUrl()}/api/square/webhook`;
 
-  if (!signatureKey) return process.env.NODE_ENV !== "production";
+  if (!signatureKey) return isDemoModeEnabled();
   if (!signature) return false;
 
   const encoder = new TextEncoder();
@@ -58,9 +60,14 @@ export async function POST(request: Request) {
   }
 
   const payment = event?.data?.object?.payment;
-  const referenceId = payment?.reference_id as string | undefined;
+  const legacyReference = typeof payment?.reference_id === "string"
+    ? payment.reference_id.match(/^(deposit|final)-(.+)$/)
+    : null;
+  const reference = parseSquarePaymentNote(payment?.note) ?? (legacyReference
+    ? { kind: legacyReference[1] as "deposit" | "final", reservationId: legacyReference[2] }
+    : null);
 
-  if (!referenceId) {
+  if (!reference) {
     return NextResponse.json({ received: true, ignored: "missing_reference" });
   }
 
@@ -68,8 +75,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true, ignored: "payment_not_completed" });
   }
 
-  const [kind, ...reservationParts] = referenceId.split("-");
-  const reservationId = reservationParts.join("-");
+  const { kind, reservationId } = reference;
   const supabase = getSupabaseAdmin();
 
   if (!['deposit', 'final'].includes(kind)) {
@@ -77,16 +83,10 @@ export async function POST(request: Request) {
   }
 
   if (!supabase || !reservationId) {
-    return NextResponse.json({ received: true, ignored: "not_configured" });
+    return NextResponse.json({ error: "Webhook storage is not configured" }, { status: 503 });
   }
-
-  if (event?.event_id) {
-    const { data: processed } = await supabase
-      .from("square_webhook_events")
-      .select("event_id")
-      .eq("event_id", event.event_id)
-      .maybeSingle();
-    if (processed) return NextResponse.json({ received: true, duplicate: true });
+  if (!payment?.id || payment?.location_id !== configuredSquareLocationId()) {
+    return NextResponse.json({ error: "Payment source mismatch" }, { status: 409 });
   }
 
   const { data: reservation, error: reservationError } = await supabase
@@ -104,6 +104,21 @@ export async function POST(request: Request) {
   );
   if (payment?.amount_money?.currency !== "EUR" || Number(payment?.amount_money?.amount) !== expectedAmount) {
     return NextResponse.json({ error: "Payment amount mismatch" }, { status: 409 });
+  }
+
+  let eventClaimed = false;
+  if (event?.event_id) {
+    const { error: claimError } = await supabase.from("square_webhook_events").insert({
+      event_id: event.event_id,
+      event_type: event.type,
+      payment_id: payment.id,
+      reservation_id: reservationId
+    });
+    if (claimError?.code === "23505") {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    if (claimError) return NextResponse.json({ error: claimError.message }, { status: 500 });
+    eventClaimed = true;
   }
 
   const wasAlreadyPaid =
@@ -129,17 +144,10 @@ export async function POST(request: Request) {
     .eq("id", reservationId);
 
   if (error) {
+    if (eventClaimed) {
+      await supabase.from("square_webhook_events").delete().eq("event_id", event.event_id);
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-
-  if (event?.event_id) {
-    await supabase.from("square_webhook_events").insert({
-      event_id: event.event_id,
-      event_type: event.type,
-      payment_id: payment.id,
-      reservation_id: reservationId
-    });
   }
 
   if (kind === "deposit" && !wasAlreadyPaid) {
@@ -163,10 +171,15 @@ export async function POST(request: Request) {
         }
 
         if (shouldIncrement) {
-          await supabase
-            .from("discount_codes")
-            .update({ times_used: Number(coupon.times_used ?? 0) + 1 })
-            .eq("id", coupon.id);
+          const { error: incrementError } = await supabase.rpc("increment_discount_code_usage", {
+            target_id: coupon.id
+          });
+          if (incrementError) {
+            console.error("Could not increment discount usage", {
+              discountCodeId: coupon.id,
+              error: incrementError.message
+            });
+          }
         }
       }
     }

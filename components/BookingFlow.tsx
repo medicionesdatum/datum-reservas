@@ -66,12 +66,24 @@ export default function BookingFlow() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [unavailableSlots, setUnavailableSlots] = useState<string[]>([]);
-  const [availabilityDate, setAvailabilityDate] = useState("");
   const [discount, setDiscount] = useState<Discount | null>(null);
   const [discountMessage, setDiscountMessage] = useState("");
+  const [checkedDiscountKey, setCheckedDiscountKey] = useState("");
   const [outsideMadrid, setOutsideMadrid] = useState(false);
 
-  const quote = useMemo(() => calculateQuote({ ...form, discount }), [form, discount]);
+  const normalizedCouponCode = form.couponCode?.trim().toUpperCase() ?? "";
+  const discountLookupKey = [
+    normalizedCouponCode,
+    form.serviceId,
+    form.surface,
+    form.additionalPlans,
+    form.additionalSections,
+    form.additionalElevations,
+    form.email.trim().toLowerCase()
+  ].join("|");
+  const currentDiscount = checkedDiscountKey === discountLookupKey ? discount : null;
+  const currentDiscountMessage = checkedDiscountKey === discountLookupKey ? discountMessage : "";
+  const quote = useMemo(() => calculateQuote({ ...form, discount: currentDiscount }), [form, currentDiscount]);
   const currentStep = steps[step]?.id ?? "service";
   const visibleSteps = steps
     .map((item, index) => ({ ...item, index }))
@@ -91,36 +103,31 @@ export default function BookingFlow() {
 
   useEffect(() => {
     let isCurrent = true;
-    setAvailabilityDate("");
-    fetch(`/api/availability?from=${form.visitDate}&to=${form.visitDate}`)
+    const requestedDate = form.visitDate;
+    fetch(`/api/availability?from=${requestedDate}&to=${requestedDate}`)
       .then((response) => response.json())
       .then((payload) => {
         if (!isCurrent) return;
-        setUnavailableSlots(payload.unavailableSlots ?? []);
-        setAvailabilityDate(form.visitDate);
+        const nextUnavailableSlots = payload.unavailableSlots ?? [];
+        const nextAllowedSlots = getBookableSlots(requestedDate).filter(
+          (slot) => !nextUnavailableSlots.includes(`${requestedDate}|${slot}`)
+        );
+        setUnavailableSlots(nextUnavailableSlots);
+        setForm((current) =>
+          current.visitDate === requestedDate && !nextAllowedSlots.includes(current.visitTime)
+            ? { ...current, visitTime: nextAllowedSlots[0] ?? "" }
+            : current
+        );
       })
-      .catch(() => {
-        if (isCurrent) setAvailabilityDate(form.visitDate);
-      });
+      .catch(() => null);
     return () => {
       isCurrent = false;
     };
   }, [form.visitDate]);
 
   useEffect(() => {
-    if (availabilityDate !== form.visitDate) return;
-    if (!allowedSlots.includes(form.visitTime)) {
-      setForm((current) => ({ ...current, visitTime: allowedSlots[0] ?? "" }));
-    }
-  }, [allowedSlots, availabilityDate, form.visitDate, form.visitTime]);
-
-  useEffect(() => {
     const code = form.couponCode?.trim();
-    if (!code) {
-      setDiscount(null);
-      setDiscountMessage("");
-      return;
-    }
+    if (!code) return;
 
     const controller = new AbortController();
     const timer = setTimeout(() => {
@@ -139,6 +146,7 @@ export default function BookingFlow() {
         .then((payload) => {
           setDiscount(payload.discount ?? null);
           setDiscountMessage(payload.discount ? "Código aplicado." : "Código no válido o no disponible.");
+          setCheckedDiscountKey(discountLookupKey);
         })
         .catch(() => null);
     }, 300);
@@ -154,7 +162,8 @@ export default function BookingFlow() {
     form.couponCode,
     form.email,
     form.serviceId,
-    form.surface
+    form.surface,
+    discountLookupKey
   ]);
 
   function patchForm(update: Partial<ReservationInput>) {
@@ -281,7 +290,7 @@ export default function BookingFlow() {
       <header className="datum-hero">
         <div className="datum-hero-shade" />
         <nav className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-6 md:px-8">
-          <a aria-label="DATUM Mediciones, inicio" href="/">
+          <Link aria-label="DATUM Mediciones, inicio" href="/">
             <Image
               alt="DATUM"
               className="h-auto w-40 md:w-52"
@@ -290,13 +299,13 @@ export default function BookingFlow() {
               src="/assets/datum-logo.png"
               width={1200}
             />
-          </a>
-          <a
+          </Link>
+          <Link
             href="/admin"
             className="rounded border border-white/30 bg-datum-ink/30 px-4 py-2 text-sm text-white backdrop-blur transition hover:border-datum-cyan"
           >
             Acceso admin
-          </a>
+          </Link>
         </nav>
 
         <div className="relative z-10 mx-auto flex min-h-[480px] max-w-7xl items-end px-5 pb-14 md:min-h-[560px] md:px-8 md:pb-20">
@@ -400,7 +409,7 @@ export default function BookingFlow() {
             <StepPayment
               form={form}
               additionalCount={additionalCount}
-              discountMessage={discountMessage}
+              discountMessage={currentDiscountMessage}
               quote={quote}
               onChange={patchForm}
             />
