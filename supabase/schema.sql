@@ -162,5 +162,5 @@ as $$
   where id = target_id;
 $$;
 
-revoke all on function public.increment_discount_code_usage(uuid) from public;
+revoke all on function public.increment_discount_code_usage(uuid) from public, anon, authenticated;
 grant execute on function public.increment_discount_code_usage(uuid) to service_role;
