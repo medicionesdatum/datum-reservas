@@ -85,7 +85,7 @@ export default function ServicesPage() {
             <div className="mt-5 grid items-end gap-10 lg:grid-cols-[1.35fr_0.65fr]">
               <div>
                 <h1 className="max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl">
-                  Documentamos tu proyecto para que proyectes sobre una base fiable.
+                  Documentamos tu espacio para que proyectes sobre una base fiable.
                 </h1>
                 <p className="mt-6 max-w-3xl text-base leading-8 text-slate-300 md:text-lg">
                   DATUM convierte espacios reales en datos precisos: nubes de puntos,
