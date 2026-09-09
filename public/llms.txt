@@ -4,6 +4,7 @@ DATUM Mediciones documenta la realidad exacta de inmuebles mediante escaneado l�
 
 Website: https://medicionesdatum.es
 Reservas: https://medicionesdatum.es/
+Información y servicios: https://medicionesdatum.es/servicios
 Contacto: https://medicionesdatum.es/contacto
 Sobre DATUM: https://medicionesdatum.es/sobre-datum
 Privacidad: https://medicionesdatum.es/privacidad
@@ -37,6 +38,32 @@ Point cloud service plus measured floor plans with room surfaces, sections and f
 ### Modelo 3D Revit
 
 Premium service: point cloud plus 3D Revit model with measured elements, areas and volumes. Delivery in RVT/IFC plus DXF/DWG and PDF. Includes 1 floor plan. Delivery: 3-5 business days.
+
+## Frequently Asked Questions
+
+### What does a DATUM survey include?
+
+DATUM scans the complete property with Leica BLK2GO. Every service includes a point cloud in E57 and RCP. Depending on the selected service, the delivery also includes 2D drawings in DXF/DWG and PDF or a 3D Revit model.
+
+### How long does delivery take?
+
+Point clouds are delivered in 1-2 business days, 2D plans in 2-3 business days, and complete 3D models in 3-5 business days.
+
+### Does the client need to be present?
+
+The client does not need to remain during the survey, but someone must provide access to the property and be available for occasional questions.
+
+### Which file formats does DATUM deliver?
+
+Point clouds are delivered in E57 and RCP; plans in editable DXF/DWG and PDF; and 3D models in RVT/IFC plus DXF/DWG and PDF, according to the contracted service.
+
+### Does DATUM work outside Madrid city?
+
+Yes, through a custom quote. Send the address, approximate area, and required service to info@medicionesdatum.es.
+
+### What scanning accuracy does DATUM provide?
+
+Leica BLK2GO provides an approximate indoor accuracy of ±10 mm, suitable for existing-condition documentation, projects, permits, and renovations.
 
 ## Booking Rules
 

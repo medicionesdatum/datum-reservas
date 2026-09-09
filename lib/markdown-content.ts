@@ -1,8 +1,11 @@
-import { publicPages, servicesForAgents, site } from "@/lib/site-content";
+import { faqItems, publicPages, servicesForAgents, site } from "@/lib/site-content";
 
 const pageList = publicPages.map((page) => `- [${page.title}](${site.url}${page.path})`).join("\n");
 const serviceList = servicesForAgents
   .map((service) => `### ${service.name}\n\n${service.summary}\n\nEntrega: ${service.delivery}.`)
+  .join("\n\n");
+const faqList = faqItems
+  .map((item) => `### ${item.question}\n\n${item.answer}`)
   .join("\n\n");
 
 const commonFooter = `
@@ -50,6 +53,34 @@ ${commonFooter}`
       body: `# Sobre DATUM Mediciones
 
 DATUM Mediciones documenta la realidad exacta de inmuebles mediante escaneado láser 3D y documentación técnica para arquitectura, reforma, construcción y análisis inmobiliario. Su trabajo convierte capturas técnicas en nubes de puntos, planos 2D y modelos 3D precisos.
+
+${commonFooter}`
+    };
+  }
+
+  if (pathname === "/servicios") {
+    return {
+      status: 200,
+      body: `# Información y servicios de DATUM Mediciones
+
+DATUM convierte espacios reales en datos precisos mediante escaneado láser 3D con Leica BLK2GO. Cada servicio parte de una captura del estado existente y se adapta al nivel de documentación que necesita el proyecto.
+
+## Servicios
+
+${serviceList}
+
+## Cómo trabajamos
+
+1. Contacto y preparación de la visita técnica.
+2. Escaneado láser 3D in situ.
+3. Registro y procesado de la nube de puntos.
+4. Delineación 2D o modelado 3D, según el servicio.
+5. Control de calidad.
+6. Entrega digital.
+
+## Preguntas frecuentes
+
+${faqList}
 
 ${commonFooter}`
     };
