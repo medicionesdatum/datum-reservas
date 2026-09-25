@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
@@ -45,6 +46,83 @@ const serviceGuide = [
   {
     need: "Quieres un modelo tridimensional listo para trabajar en Revit",
     service: "Modelo 3D Revit"
+  }
+] as const;
+
+const pointCloudImages = [
+  {
+    src: "/assets/nube-puntos/01-edificio.png",
+    alt: "Nube de puntos 3D de un edificio residencial completo",
+    width: 667,
+    height: 688
+  },
+  {
+    src: "/assets/nube-puntos/02-nave-seccion.png",
+    alt: "Sección de una nube de puntos del interior de una nave industrial",
+    width: 1025,
+    height: 778
+  },
+  {
+    src: "/assets/nube-puntos/03-local-seccion.png",
+    alt: "Nube de puntos seccionada de un local comercial",
+    width: 1034,
+    height: 745
+  },
+  {
+    src: "/assets/nube-puntos/04-plaza-exterior.png",
+    alt: "Nube de puntos 3D de una plaza entre edificios",
+    width: 928,
+    height: 695
+  },
+  {
+    src: "/assets/nube-puntos/05-fachada-acceso.png",
+    alt: "Nube de puntos de la fachada y el acceso de un edificio",
+    width: 885,
+    height: 544
+  },
+  {
+    src: "/assets/nube-puntos/06-nave-interior.png",
+    alt: "Nube de puntos del interior de una nave industrial",
+    width: 1048,
+    height: 750
+  }
+] as const;
+
+const plans2dImages = [
+  {
+    src: "/assets/planos-2d/01-planta-vivienda.png",
+    alt: "Comparativa entre la planta CAD y el plano 2D delineado de una vivienda"
+  },
+  {
+    src: "/assets/planos-2d/02-planta-local.png",
+    alt: "Comparativa entre la planta CAD y el plano 2D delineado de un local"
+  },
+  {
+    src: "/assets/planos-2d/03-alzado-fachada.png",
+    alt: "Alzado 2D de una fachada residencial con detalle del local comercial"
+  },
+  {
+    src: "/assets/planos-2d/04-alzados-edificio.png",
+    alt: "Comparativa de varios alzados CAD y planos 2D delineados de un edificio"
+  }
+] as const;
+
+const revit3dImages = [
+  {
+    src: "/assets/modelo-3d-revit/01-modelo-fachada.jpg",
+    alt: "Vista exterior de un modelo arquitectónico 3D realizado en Revit"
+  },
+  {
+    src: "/assets/modelo-3d-revit/02-isometrico-seccion.jpg",
+    alt: "Vista isométrica seccionada de un modelo 3D de vivienda en Revit"
+  },
+  {
+    src: "/assets/modelo-3d-revit/03-planta-baja.jpg",
+    alt: "Vista isométrica de la planta baja de un modelo 3D en Revit"
+  },
+  {
+    src: "/assets/modelo-3d-revit/04-planta-sotano.jpg",
+    alt: "Vista isométrica de la planta sótano de un modelo 3D en Revit"
   }
 ] as const;
 
@@ -173,7 +251,7 @@ export default function ServicesPage() {
                     </dl>
                     <p className="mt-6 text-sm leading-6 text-slate-400">{service.scope}</p>
                   </div>
-                  <MediaPlaceholder serviceName={service.name} />
+                  <ServiceMedia serviceId={service.id} serviceName={service.name} />
                 </article>
               ))}
             </div>
@@ -355,13 +433,37 @@ function InfoLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MediaPlaceholder({ serviceName }: { serviceName: string }) {
+function ServiceMedia({
+  serviceId,
+  serviceName
+}: {
+  serviceId: string;
+  serviceName: string;
+}) {
+  const serviceImages =
+    serviceId === "point-cloud"
+      ? pointCloudImages
+      : serviceId === "plans-2d"
+        ? plans2dImages
+        : serviceId === "revit-3d"
+          ? revit3dImages
+          : null;
+  const hasGallery = serviceImages !== null;
+  const isPlans2dGallery = serviceId === "plans-2d";
+  const isRevit3dGallery = serviceId === "revit-3d";
+
   return (
     <div
-      aria-label={`Espacios reservados para el material audiovisual de ${serviceName}`}
-      className="grid grid-cols-2 gap-3 border-t border-datum-line bg-white/[0.025] p-4 lg:border-l lg:border-t-0"
+      aria-label={`Material audiovisual de ${serviceName}`}
+      className={`grid gap-3 border-t border-datum-line bg-white/[0.025] p-4 lg:border-l lg:border-t-0 ${
+        hasGallery
+          ? isPlans2dGallery
+            ? "grid-cols-1"
+            : "grid-cols-1 sm:grid-cols-2"
+          : "grid-cols-2"
+      }`}
     >
-      <div className="col-span-2 flex aspect-video items-center justify-center rounded-lg border border-dashed border-datum-line bg-datum-panel/45 p-5 text-center">
+      <div className="col-span-full flex aspect-video items-center justify-center rounded-lg border border-dashed border-datum-line bg-datum-panel/45 p-5 text-center">
         <div>
           <p className="text-sm font-semibold text-slate-200">Vídeo de YouTube</p>
           <p className="mt-2 text-xs leading-5 text-slate-500">
@@ -369,17 +471,42 @@ function MediaPlaceholder({ serviceName }: { serviceName: string }) {
           </p>
         </div>
       </div>
-      {[1, 2, 3, 4].map((item) => (
-        <div
-          className="flex aspect-[4/3] items-center justify-center rounded-lg border border-dashed border-datum-line bg-datum-panel/45 p-4 text-center"
-          key={item}
-        >
-          <div>
-            <p className="text-sm font-semibold text-slate-300">Imagen {item}</p>
-            <p className="mt-1 text-xs text-slate-500">Espacio reservado</p>
-          </div>
-        </div>
-      ))}
+      {serviceImages
+        ? serviceImages.map((image) => (
+            <figure
+              className={`relative overflow-hidden rounded-lg border border-datum-line ${
+                isPlans2dGallery
+                  ? "aspect-video bg-white"
+                  : isRevit3dGallery
+                    ? "aspect-square bg-white"
+                    : "aspect-[4/3] bg-[#242424]"
+              }`}
+              key={image.src}
+            >
+              <Image
+                alt={image.alt}
+                className="object-contain"
+                fill
+                sizes={
+                  isPlans2dGallery
+                    ? "(max-width: 1023px) calc(100vw - 72px), 50vw"
+                    : "(max-width: 639px) calc(100vw - 72px), (max-width: 1023px) calc(50vw - 54px), 25vw"
+                }
+                src={image.src}
+              />
+            </figure>
+          ))
+        : [1, 2, 3, 4].map((item) => (
+            <div
+              className="flex aspect-[4/3] items-center justify-center rounded-lg border border-dashed border-datum-line bg-datum-panel/45 p-4 text-center"
+              key={item}
+            >
+              <div>
+                <p className="text-sm font-semibold text-slate-300">Imagen {item}</p>
+                <p className="mt-1 text-xs text-slate-500">Espacio reservado</p>
+              </div>
+            </div>
+          ))}
     </div>
   );
 }
