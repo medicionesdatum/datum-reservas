@@ -115,6 +115,13 @@ Servicio de email transaccional. Se usa para:
 - Enviar confirmacion al cliente cuando Square confirma el deposito.
 - Enviar confirmacion interna cuando el deposito queda pagado.
 
+### Notion
+
+CRM operativo que recibe una copia de las reservas confirmadas. La fila se crea
+solo cuando Square confirma el deposito y se actualiza por el mismo ID de reserva
+cuando cambian el estado, el pago o las notas internas desde el panel. Supabase
+continua siendo la fuente de datos principal.
+
 ### Vercel
 
 Hosting y despliegue de la aplicacion Next.js.
@@ -143,6 +150,7 @@ Desde `/admin`, el cliente puede:
 - Escribir notas internas.
 - Generar enlace de pago del saldo pendiente en Square.
 - Revisar clientes agrupados por email.
+- Exportar las reservas a CSV desde Clientes.
 - Crear, activar, desactivar y eliminar codigos de descuento.
 - Configurar codigos con limite total, fecha de vencimiento, base minima y uso unico por email.
 

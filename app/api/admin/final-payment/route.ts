@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { ConfigurationError, getBookingMode } from "@/lib/runtime-config";
 import { createSquarePaymentLink, deleteSquarePaymentLink } from "@/lib/square";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminAuthorized } from "@/lib/admin-auth";
+import { syncReservationToNotionSafely } from "@/lib/notion";
 
 export async function POST(request: Request) {
   if (!isAdminAuthorized(request)) {
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     if (!supabase) throw new ConfigurationError("No se puede acceder a la base de datos.");
     const { data: reservation, error: reservationError } = await supabase
       .from("reservations")
-      .select("id, pending_balance, payment_status, final_payment_link")
+      .select("*")
       .eq("id", id)
       .single();
     if (reservationError || !reservation) {
@@ -63,6 +64,18 @@ export async function POST(request: Request) {
       })
       .eq("id", id);
     if (error) throw error;
+
+    after(() =>
+      syncReservationToNotionSafely(
+        {
+          ...reservation,
+          final_payment_link: payment.checkoutUrl,
+          final_square_reference: payment.paymentLinkId,
+          operational_status: "pendiente_de_saldo"
+        },
+        "admin_final_payment"
+      )
+    );
 
     return NextResponse.json(payment);
   } catch (error) {

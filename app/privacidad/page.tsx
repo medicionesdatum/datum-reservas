@@ -29,10 +29,13 @@ export default function PrivacyPage() {
         conciliar la reserva con la pasarela Square.
       </p>
       <p>
-        La base de datos operativa se gestiona mediante Supabase. Los pagos se
-        procesan mediante Square y los correos transaccionales se envían mediante
-        Resend. DATUM no debe solicitar al cliente contraseñas personales,
-        números completos de tarjeta o claves privadas por correo electrónico.
+        La base de datos operativa se gestiona mediante Supabase. Cuando Square
+        confirma el pago del depósito, los datos necesarios para gestionar el
+        proyecto se reflejan también en el CRM interno de DATUM alojado en Notion.
+        Los pagos se procesan mediante Square y los correos transaccionales se
+        envían mediante Resend. DATUM no debe solicitar al cliente contraseñas
+        personales, números completos de tarjeta o claves privadas por correo
+        electrónico.
       </p>
       <p>
         El cliente puede contactar en {site.email} para consultar dudas sobre

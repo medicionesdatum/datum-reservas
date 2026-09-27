@@ -13,6 +13,7 @@ La aplicacion permite que un cliente seleccione un servicio, introduzca los dato
 - TypeScript.
 - Tailwind CSS.
 - Supabase como base de datos.
+- Notion como espejo CRM de las reservas confirmadas.
 - Square para enlaces de pago.
 - Resend para correo transaccional.
 - Vercel para despliegue.
@@ -55,6 +56,8 @@ SQUARE_ENVIRONMENT
 SQUARE_WEBHOOK_SIGNATURE_KEY
 RESEND_API_KEY
 EMAIL_FROM
+NOTION_TOKEN
+NOTION_DATABASE_ID
 ```
 
 Notas:
@@ -64,6 +67,7 @@ Notas:
 - `NEXT_PUBLIC_APP_URL`: debe coincidir con la URL publica usada por Square y el webhook.
 - `ADMIN_PASSWORD`: protege el portal `/admin`; no debe compartirse fuera del equipo autorizado.
 - `ALLOW_DEMO_MODE`: solo puede ser `true` en desarrollo. En producción el sistema falla de forma segura si faltan Supabase o Square.
+- `NOTION_TOKEN` y `NOTION_DATABASE_ID`: se usan solo en servidor para reflejar en CRM las reservas cuyo depósito ya fue confirmado.
 
 ## Deploy
 
@@ -104,6 +108,7 @@ lib/
   email.ts                    # Envio con Resend
   discount-codes.ts           # Logica de cupones
   reservation-emails.ts       # Plantillas de correo
+  notion.ts                   # Sincronizacion de reservas confirmadas con CRM Notion
 supabase/
   schema.sql                  # Esquema principal
   discount-redemptions.sql    # Migracion de uso unico por email
@@ -117,6 +122,8 @@ public/assets/
 - El pago no se confirma por redireccion del usuario. Solo se confirma con el webhook firmado de Square.
 - Las reservas quedan inicialmente como `pendiente_de_pago`.
 - Si Square confirma el deposito, la reserva cambia a `reserva_confirmada` y se envian correos.
+- Tras confirmar el deposito, la reserva se crea o actualiza en CRM Notion usando el UUID de Supabase para evitar duplicados.
+- Supabase sigue siendo la fuente principal. Un fallo temporal de Notion no revierte el pago ni la reserva.
 - Si el cliente abandona el checkout, la reserva pendiente caduca a los 30 minutos y no se envia correo de confirmacion al cliente.
 - Los codigos de descuento se aplican antes del IVA.
 - Los usos de cupones se contabilizan cuando Square confirma el pago, no al iniciar el checkout.

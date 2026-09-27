@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminAuthorized } from "@/lib/admin-auth";
+import { syncReservationToNotionSafely } from "@/lib/notion";
 import { isDemoModeEnabled } from "@/lib/runtime-config";
 
 const operationalStatuses = new Set([
@@ -78,6 +79,8 @@ export async function PATCH(request: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  after(() => syncReservationToNotionSafely(data, "admin_update"));
 
   return NextResponse.json({ reservation: data });
 }

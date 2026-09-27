@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { normalizeDiscountCode } from "@/lib/discount-codes";
 import { sendReservationEmail } from "@/lib/email";
@@ -9,6 +9,7 @@ import {
   reservationFromDatabase
 } from "@/lib/reservation-emails";
 import { getAppUrl, isDemoModeEnabled } from "@/lib/runtime-config";
+import { syncReservationToNotionSafely } from "@/lib/notion";
 import { configuredSquareLocationId, parseSquarePaymentNote } from "@/lib/square";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
@@ -115,6 +116,7 @@ export async function POST(request: Request) {
       reservation_id: reservationId
     });
     if (claimError?.code === "23505") {
+      after(() => syncReservationToNotionSafely(reservation, "square_duplicate"));
       return NextResponse.json({ received: true, duplicate: true });
     }
     if (claimError) return NextResponse.json({ error: claimError.message }, { status: 500 });
@@ -150,6 +152,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const updatedReservation = { ...reservation, ...update };
+  after(() => syncReservationToNotionSafely(updatedReservation, `square_${kind}`));
+
   if (kind === "deposit" && !wasAlreadyPaid) {
     if (reservation.coupon_code) {
       const couponCode = normalizeDiscountCode(String(reservation.coupon_code));
@@ -184,12 +189,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const emailRecord = reservationFromDatabase({
-      ...reservation,
-      payment_status: update.payment_status,
-      operational_status: update.operational_status,
-      deposit_square_reference: payment.id
-    });
+    const emailRecord = reservationFromDatabase(updatedReservation);
 
     await Promise.allSettled([
       sendReservationEmail({

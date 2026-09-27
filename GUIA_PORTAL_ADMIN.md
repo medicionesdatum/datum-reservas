@@ -104,6 +104,11 @@ Permite revisar:
 
 Desde esta seccion se puede abrir la ficha de la reserva mas reciente del cliente.
 
+El boton `Exportar CSV` descarga una fila por reserva con datos de cliente,
+servicio, visita, importes y estados. Ademas, las reservas con deposito confirmado
+se reflejan automaticamente en CRM Notion. Los cambios de estado, pago y notas
+internas guardados en el panel actualizan la misma fila mediante el ID de reserva.
+
 ### Descuentos
 
 Permite gestionar codigos de descuento.
