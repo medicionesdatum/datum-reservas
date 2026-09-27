@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatCurrency, services } from "@/lib/pricing";
 import { getAllowedSlots } from "@/lib/availability";
+import { buildReservationsCsv } from "@/lib/reservations-csv";
 
 type ReservationRow = {
   id: string;
@@ -13,6 +14,7 @@ type ReservationRow = {
   phone: string;
   full_address: string;
   postal_code: string;
+  property_floors?: number;
   service_id: keyof typeof services;
   surface: number;
   range_label: string;
@@ -33,6 +35,7 @@ type ReservationRow = {
   final_payment_link?: string;
   notes?: string;
   internal_notes?: string;
+  accepts_marketing?: boolean;
 };
 
 type BlockedSlot = {
@@ -558,9 +561,38 @@ function ClientsView({ reservations, onOpenReservation }: { reservations: Reserv
   }, [reservations]);
   const filtered = clients.filter((client) => `${client.latest.customer_name} ${client.latest.email} ${client.latest.phone}`.toLowerCase().includes(query.toLowerCase()));
 
+  function exportCsv() {
+    const csv = buildReservationsCsv(reservations);
+    const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `datum-reservas-${toDateValue(new Date())}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-slate-400">{clients.length} clientes únicos · {reservations.length} reservas</p></div><input className="w-full rounded border border-datum-line bg-white px-3 py-3 text-sm sm:w-80" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar cliente" value={query} /></div>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm text-slate-400">{clients.length} clientes únicos · {reservations.length} reservas</p>
+          <p className="mt-1 text-xs text-slate-500">El CSV incluye una fila por reserva y está preparado para importarlo en Notion.</p>
+        </div>
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          <button
+            className="rounded border border-datum-cyan px-4 py-3 text-sm font-semibold text-datum-cyan transition hover:bg-datum-cyan hover:text-datum-ink disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!reservations.length}
+            onClick={exportCsv}
+            type="button"
+          >
+            Exportar CSV
+          </button>
+          <input className="w-full rounded border border-datum-line bg-white px-3 py-3 text-sm sm:w-80" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar cliente" value={query} />
+        </div>
+      </div>
       <div className="mt-6 overflow-x-auto border-t border-datum-line">
         <table className="w-full min-w-[760px] text-left text-sm"><thead className="text-xs uppercase text-slate-500"><tr><th className="py-4 pr-4">Cliente</th><th className="px-4 py-4">Contacto</th><th className="px-4 py-4">Reservas</th><th className="px-4 py-4">Facturación</th><th className="px-4 py-4">Última reserva</th><th className="py-4 pl-4"></th></tr></thead><tbody className="divide-y divide-datum-line">{filtered.map((client) => <tr key={client.latest.email}><td className="py-4 pr-4 font-semibold">{client.latest.customer_name}</td><td className="px-4 py-4 text-slate-400"><span className="block">{client.latest.email}</span><span>{client.latest.phone}</span></td><td className="px-4 py-4">{client.items.length}</td><td className="px-4 py-4">{formatCurrency(client.total)}</td><td className="px-4 py-4 text-slate-400">{formatShortDate(client.latest.visit_date)}</td><td className="py-4 pl-4 text-right"><button className="text-datum-cyan" onClick={() => onOpenReservation(client.latest.id)} type="button">Ver ficha</button></td></tr>)}</tbody></table>
         {!filtered.length ? <Empty text="No hay clientes que coincidan con la búsqueda." /> : null}
