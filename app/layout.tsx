@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 import { absoluteUrl, site } from "@/lib/site-content";
 import "./globals.css";
 
@@ -49,7 +50,10 @@ export default function RootLayout({
 }>) {
   return (
     <html data-scroll-behavior="smooth" lang="es">
-      <body>{children}</body>
+      <body>
+        {children}
+        <AnalyticsConsent gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+      </body>
     </html>
   );
 }

@@ -37,6 +37,28 @@ export default function PrivacyPage() {
         personales, números completos de tarjeta o claves privadas por correo
         electrónico.
       </p>
+      <section
+        className="space-y-4 rounded-lg border border-datum-line bg-white/[0.03] p-5"
+        id="cookies-estadisticas"
+      >
+        <h2 className="text-2xl font-semibold text-white">
+          Cookies estadísticas y Google Analytics
+        </h2>
+        <p>
+          DATUM utiliza Google Analytics 4 únicamente cuando el visitante acepta
+          las cookies estadísticas. La herramienta permite conocer de forma
+          agregada qué páginas se visitan y cómo se utiliza la web para mejorar
+          su funcionamiento. No se envían a Google los nombres, correos,
+          teléfonos, direcciones, referencias de reserva ni las notas
+          introducidas por el cliente.
+        </p>
+        <p>
+          La elección se guarda en el navegador y puede modificarse en cualquier
+          momento mediante el botón «Cookies» disponible en la web. Las rutas del
+          panel administrativo y de confirmación de reservas están excluidas de
+          la medición.
+        </p>
+      </section>
       <p>
         El cliente puede contactar en {site.email} para consultar dudas sobre
         sus datos, corregir información de una reserva o solicitar información
