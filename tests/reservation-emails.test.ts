@@ -34,8 +34,28 @@ describe("reservation email content", () => {
 
     expect(html).toContain("Cliente &lt;prueba&gt;");
     expect(html).not.toContain("Cliente <prueba>");
-    expect(html.match(/<ul>/g)).toHaveLength(2);
+    expect(html.match(/<ul\b/g)).toHaveLength(2);
     expect(html.match(/<\/ul>/g)).toHaveLength(2);
+  });
+
+  it("renders the DATUM confirmation design with all reservation essentials", () => {
+    const html = customerReservationConfirmedEmail(reservation);
+
+    expect(html).toContain("https://medicionesdatum.es/assets/datum-logo.png");
+    expect(html).toContain("Reserva confirmada");
+    expect(html).toContain("font-family:Arial,Helvetica,sans-serif");
+    expect(html).not.toContain("Georgia");
+    expect(html).toContain("Jueves, 1 de octubre de 2026");
+    expect(html).toContain("09:00 h");
+    expect(html).toContain("Planos 2D Estado Actual");
+    expect(html).toContain("Calle Mayor 1, Madrid");
+    expect(html).toContain("28013");
+    expect(html).toContain("544,50 €");
+    expect(html).toContain("272,25 €");
+    expect(html).toContain("Política de cambio de fecha");
+    expect(html).toContain("Accesos y apertura del espacio");
+    expect(html).toContain("Condiciones del espacio");
+    expect(html).toContain("mailto:info@medicionesdatum.es");
   });
 
   it("uses the configured DATUM recipients and trims whitespace", () => {
