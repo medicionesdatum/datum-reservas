@@ -1,27 +1,74 @@
-export async function sendReservationEmail(_params: {
+import { Resend } from "resend";
+
+export type ReservationEmail = {
   to: string | string[];
   subject: string;
   html: string;
-}) {
-  if (!process.env.RESEND_API_KEY) return { skipped: true };
+};
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`
-    },
-    body: JSON.stringify({
-      from: process.env.EMAIL_FROM ?? "DATUM Mediciones <info@medicionesdatum.es>",
-      to: _params.to,
-      subject: _params.subject,
-      html: _params.html
-    })
-  });
+export class EmailConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EmailConfigurationError";
+  }
+}
 
-  if (!response.ok) {
-    throw new Error(await response.text());
+function emailClient() {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) {
+    throw new EmailConfigurationError("Falta configurar RESEND_API_KEY.");
   }
 
-  return response.json();
+  return new Resend(apiKey);
+}
+
+function emailFrom() {
+  const from = process.env.EMAIL_FROM?.trim();
+  if (!from) {
+    throw new EmailConfigurationError("Falta configurar EMAIL_FROM.");
+  }
+
+  return from;
+}
+
+function resendErrorMessage(error: { message?: string } | null) {
+  return error?.message?.trim() || "Resend no pudo aceptar el correo.";
+}
+
+export async function sendReservationEmail(
+  params: ReservationEmail & { idempotencyKey: string }
+) {
+  const { data, error } = await emailClient().emails.send(
+    {
+      from: emailFrom(),
+      to: params.to,
+      subject: params.subject,
+      html: params.html
+    },
+    { idempotencyKey: params.idempotencyKey }
+  );
+
+  if (error) throw new Error(resendErrorMessage(error));
+  return data;
+}
+
+export async function sendReservationEmailBatch(
+  messages: ReservationEmail[],
+  idempotencyKey: string
+) {
+  if (messages.length === 0) return [];
+
+  const from = emailFrom();
+  const { data, error } = await emailClient().batch.send(
+    messages.map((message) => ({
+      from,
+      to: message.to,
+      subject: message.subject,
+      html: message.html
+    })),
+    { idempotencyKey, batchValidation: "strict" }
+  );
+
+  if (error) throw new Error(resendErrorMessage(error));
+  return data;
 }

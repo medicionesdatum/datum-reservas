@@ -8,7 +8,7 @@ La aplicacion permite que un cliente seleccione un servicio, introduzca los dato
 
 ## Stack tecnologico
 
-- Next.js 15 con App Router.
+- Next.js 16 con App Router.
 - React 19.
 - TypeScript.
 - Tailwind CSS.
@@ -43,6 +43,7 @@ Configurar en `.env.local` para desarrollo y en Vercel para produccion. No guard
 
 ```text
 NEXT_PUBLIC_APP_URL
+NEXT_PUBLIC_GA_MEASUREMENT_ID
 NEXT_PUBLIC_SUPABASE_URL
 SUPABASE_SECRET_KEY
 SUPABASE_SERVICE_ROLE_KEY
@@ -65,9 +66,12 @@ Notas:
 - `SUPABASE_SECRET_KEY` o `SUPABASE_SERVICE_ROLE_KEY`: se usa solo en servidor.
 - `SQUARE_ENVIRONMENT`: usar `production` en produccion.
 - `NEXT_PUBLIC_APP_URL`: debe coincidir con la URL publica usada por Square y el webhook.
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID`: identificador `G-...` de Google Analytics. Analytics solo se carga tras el consentimiento del usuario y se excluye de `/admin` y `/confirmacion`.
 - `ADMIN_PASSWORD`: protege el portal `/admin`; no debe compartirse fuera del equipo autorizado.
 - `ALLOW_DEMO_MODE`: solo puede ser `true` en desarrollo. En producción el sistema falla de forma segura si faltan Supabase o Square.
 - `NOTION_TOKEN` y `NOTION_DATABASE_ID`: se usan solo en servidor para reflejar en CRM las reservas cuyo depósito ya fue confirmado.
+- `RESERVATION_NOTIFICATION_EMAILS`: uno o varios correos internos de DATUM, separados por comas.
+- `EMAIL_FROM`: remitente de un dominio verificado en Resend, por ejemplo `DATUM Mediciones <info@medicionesdatum.es>`.
 
 ## Deploy
 
@@ -87,6 +91,7 @@ Antes de operar en produccion, verificar:
 - Migración `supabase/production-hardening.sql` ejecutada en instalaciones existentes.
 - Webhook de Square apuntando a `/api/square/webhook`.
 - Dominio de Resend verificado para enviar correos.
+- Integración de Resend instalada en el proyecto de Vercel de DATUM y `RESEND_API_KEY` disponible en Producción, Preview y Development.
 
 ## Estructura basica
 

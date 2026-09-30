@@ -1,7 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { normalizeDiscountCode } from "@/lib/discount-codes";
-import { sendReservationEmail } from "@/lib/email";
+import { sendReservationEmailBatch } from "@/lib/email";
 import {
   adminConfirmedReservationEmail,
   customerReservationConfirmedEmail,
@@ -107,21 +107,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Payment amount mismatch" }, { status: 409 });
   }
 
-  let eventClaimed = false;
-  if (event?.event_id) {
-    const { error: claimError } = await supabase.from("square_webhook_events").insert({
-      event_id: event.event_id,
-      event_type: event.type,
-      payment_id: payment.id,
-      reservation_id: reservationId
-    });
-    if (claimError?.code === "23505") {
-      after(() => syncReservationToNotionSafely(reservation, "square_duplicate"));
-      return NextResponse.json({ received: true, duplicate: true });
-    }
-    if (claimError) return NextResponse.json({ error: claimError.message }, { status: 500 });
-    eventClaimed = true;
+  const eventId = typeof event?.event_id === "string" ? event.event_id.trim() : "";
+  if (!eventId) {
+    return NextResponse.json({ error: "Missing event id" }, { status: 400 });
   }
+
+  const { error: claimError } = await supabase.from("square_webhook_events").insert({
+    event_id: eventId,
+    event_type: event.type,
+    payment_id: payment.id,
+    reservation_id: reservationId
+  });
+  if (claimError?.code === "23505") {
+    after(() => syncReservationToNotionSafely(reservation, "square_duplicate"));
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+  if (claimError) return NextResponse.json({ error: claimError.message }, { status: 500 });
 
   const wasAlreadyPaid =
     kind === "deposit"
@@ -146,17 +147,15 @@ export async function POST(request: Request) {
     .eq("id", reservationId);
 
   if (error) {
-    if (eventClaimed) {
-      await supabase.from("square_webhook_events").delete().eq("event_id", event.event_id);
-    }
+    await supabase.from("square_webhook_events").delete().eq("event_id", eventId);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   const updatedReservation = { ...reservation, ...update };
   after(() => syncReservationToNotionSafely(updatedReservation, `square_${kind}`));
 
-  if (kind === "deposit" && !wasAlreadyPaid) {
-    if (reservation.coupon_code) {
+  if (kind === "deposit") {
+    if (!wasAlreadyPaid && reservation.coupon_code) {
       const couponCode = normalizeDiscountCode(String(reservation.coupon_code));
       const { data: coupon } = await supabase
         .from("discount_codes")
@@ -191,18 +190,42 @@ export async function POST(request: Request) {
 
     const emailRecord = reservationFromDatabase(updatedReservation);
 
-    await Promise.allSettled([
-      sendReservationEmail({
-        to: emailRecord.email,
-        subject: "Reserva confirmada - DATUM Mediciones",
-        html: customerReservationConfirmedEmail(emailRecord)
-      }),
-      sendReservationEmail({
-        to: notificationEmails(),
-        subject: `Reserva confirmada DATUM - ${emailRecord.visitDate} ${emailRecord.visitTime}`,
-        html: adminConfirmedReservationEmail(emailRecord)
-      })
-    ]);
+    try {
+      await sendReservationEmailBatch(
+        [
+          {
+            to: emailRecord.email,
+            subject: "Reserva confirmada - DATUM Mediciones",
+            html: customerReservationConfirmedEmail(emailRecord)
+          },
+          {
+            to: notificationEmails(),
+            subject: `Nueva cita confirmada DATUM - ${emailRecord.visitDate} ${emailRecord.visitTime}`,
+            html: adminConfirmedReservationEmail(emailRecord)
+          }
+        ],
+        `reservation-confirmed/${reservationId}`
+      );
+    } catch (emailError) {
+      console.error("Could not send confirmed reservation emails", {
+        reservationId,
+        error: emailError instanceof Error ? emailError.message : "unknown"
+      });
+
+      const { error: releaseError } = await supabase
+        .from("square_webhook_events")
+        .delete()
+        .eq("event_id", eventId);
+      if (releaseError) {
+        console.error("Could not release Square event for email retry", {
+          reservationId,
+          eventId,
+          error: releaseError.message
+        });
+      }
+
+      return NextResponse.json({ error: "Email delivery failed" }, { status: 502 });
+    }
   }
 
   return NextResponse.json({ received: true });

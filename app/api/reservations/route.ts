@@ -144,11 +144,19 @@ export async function POST(request: Request) {
       if (error) throw error;
     }
 
-    await sendReservationEmail({
-      to: notificationEmails(),
-      subject: `Solicitud pendiente de pago - ${input.visitDate} ${input.visitTime}`,
-      html: adminPendingReservationEmail(record)
-    }).catch(() => null);
+    try {
+      await sendReservationEmail({
+        to: notificationEmails(),
+        subject: `Solicitud pendiente de pago - ${input.visitDate} ${input.visitTime}`,
+        html: adminPendingReservationEmail(record),
+        idempotencyKey: `reservation-pending-admin/${reservationId}`
+      });
+    } catch (emailError) {
+      console.error("Could not send pending reservation email", {
+        reservationId,
+        error: emailError instanceof Error ? emailError.message : "unknown"
+      });
+    }
 
     return NextResponse.json({
       reservationId,

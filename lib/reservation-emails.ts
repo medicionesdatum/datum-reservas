@@ -23,11 +23,12 @@ type ReservationEmailRecord = Pick<
 >;
 
 export function notificationEmails() {
-  return (
-    process.env.RESERVATION_NOTIFICATION_EMAILS ??
-    process.env.ADMIN_EMAILS ??
-    "d.escobar@medicionesdatum.es"
-  )
+  const configured = [
+    process.env.RESERVATION_NOTIFICATION_EMAILS,
+    process.env.ADMIN_EMAILS
+  ].find((value) => value?.trim());
+
+  return (configured ?? "info@medicionesdatum.es,d.escobar@medicionesdatum.es")
     .split(",")
     .map((email) => email.trim())
     .filter(Boolean);
