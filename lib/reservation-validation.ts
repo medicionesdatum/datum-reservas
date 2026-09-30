@@ -1,4 +1,5 @@
 import { isValidSlot } from "@/lib/availability";
+import { normalizePhoneNumber } from "@/lib/phone";
 import type { RepresentationType, ReservationInput, ServiceId } from "@/lib/types";
 
 const serviceIds = new Set<ServiceId>(["point_cloud", "plans_2d", "revit_3d"]);
@@ -62,7 +63,7 @@ export function parseReservationInput(value: unknown, now = Date.now()):
   }
   if (customerName.length < 2) return { data: null, error: "Introduce un nombre válido." };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { data: null, error: "Introduce un correo electrónico válido." };
-  if (!/^[+()\d\s.-]{7,30}$/.test(phone)) return { data: null, error: "Introduce un teléfono válido." };
+  if (!normalizePhoneNumber(phone)) return { data: null, error: "Introduce un teléfono válido." };
   if (!fullAddress || !street) return { data: null, error: "Completa los datos del inmueble." };
   if (!/^\d{5}$/.test(postalCode)) return { data: null, error: "Introduce un código postal válido." };
   if (!Number.isInteger(propertyFloors) || propertyFloors < 1 || propertyFloors > 20) {

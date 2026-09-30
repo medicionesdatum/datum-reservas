@@ -1,3 +1,4 @@
+import { normalizePhoneNumber } from "@/lib/phone";
 import { ConfigurationError, getAppUrl, isDemoModeEnabled } from "@/lib/runtime-config";
 
 type PaymentKind = "deposit" | "final";
@@ -33,6 +34,15 @@ export function parseSquarePaymentNote(value: unknown) {
   return match ? { kind: match[1] as PaymentKind, reservationId: match[2].toLowerCase() } : null;
 }
 
+function hasSquareErrorCode(detail: string, code: string) {
+  try {
+    const payload = JSON.parse(detail) as { errors?: Array<{ code?: unknown }> };
+    return payload.errors?.some((error) => error.code === code) ?? false;
+  } catch {
+    return false;
+  }
+}
+
 export async function createSquarePaymentLink(params: {
   reservationId: string;
   description: string;
@@ -58,43 +68,64 @@ export async function createSquarePaymentLink(params: {
   }
 
   const { token, locationId, host } = squareSettings();
-  const normalizedPhone = params.customerPhone?.replace(/[^+\d]/g, "").slice(0, 17);
-  const prePopulatedData = {
-    ...(params.customerEmail ? { buyer_email: params.customerEmail } : {}),
-    ...(normalizedPhone ? { buyer_phone_number: normalizedPhone } : {})
+  const normalizedPhone = normalizePhoneNumber(params.customerPhone);
+
+  const requestPaymentLink = (phone: string | null, idempotencySuffix = "") => {
+    const prePopulatedData = {
+      ...(params.customerEmail ? { buyer_email: params.customerEmail } : {}),
+      ...(phone ? { buyer_phone_number: phone } : {})
+    };
+
+    return fetch(`${host}/v2/online-checkout/payment-links`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Square-Version": "2026-05-20",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        idempotency_key: `${params.kind}-${params.reservationId}${idempotencySuffix}`,
+        quick_pay: {
+          name: params.description,
+          price_money: {
+            amount: params.amountInCents,
+            currency: "EUR"
+          },
+          location_id: locationId
+        },
+        checkout_options: {
+          redirect_url: `${appUrl}/confirmacion?reserva=${params.reservationId}`
+        },
+        ...(Object.keys(prePopulatedData).length ? { pre_populated_data: prePopulatedData } : {}),
+        payment_note: squarePaymentNote(params.kind, params.reservationId)
+      })
+    });
   };
 
-  const response = await fetch(`${host}/v2/online-checkout/payment-links`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Square-Version": "2026-05-20",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      idempotency_key: `${params.kind}-${params.reservationId}`,
-      quick_pay: {
-        name: params.description,
-        price_money: {
-          amount: params.amountInCents,
-          currency: "EUR"
-        },
-        location_id: locationId
-      },
-      checkout_options: {
-        redirect_url: `${appUrl}/confirmacion?reserva=${params.reservationId}`
-      },
-      ...(Object.keys(prePopulatedData).length ? { pre_populated_data: prePopulatedData } : {}),
-      payment_note: squarePaymentNote(params.kind, params.reservationId)
-    })
-  });
+  let response = await requestPaymentLink(normalizedPhone);
+  let detail = response.ok ? "" : await response.text();
+  let retriedWithoutPhone = false;
+
+  if (
+    !response.ok &&
+    normalizedPhone &&
+    response.status === 400 &&
+    hasSquareErrorCode(detail, "INVALID_PHONE_NUMBER")
+  ) {
+    retriedWithoutPhone = true;
+    console.warn("Square rejected the pre-populated phone; retrying without it", {
+      locationId
+    });
+    response = await requestPaymentLink(null, "-without-phone");
+    detail = response.ok ? "" : await response.text();
+  }
 
   if (!response.ok) {
-    const detail = await response.text();
     console.error("Square payment link failed", {
       detail,
       locationId,
-      hasToken: Boolean(token)
+      hasToken: Boolean(token),
+      retriedWithoutPhone
     });
     throw new Error("No se pudo generar el enlace de pago. Revisa la configuración de Square.");
   }

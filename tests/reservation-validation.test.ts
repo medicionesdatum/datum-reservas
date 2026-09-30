@@ -37,6 +37,7 @@ describe("reservation validation", () => {
 
   it("rejects invalid contact and property data", () => {
     expect(parseReservationInput({ ...validReservation, email: "invalid" }, now).data).toBeNull();
+    expect(parseReservationInput({ ...validReservation, phone: "1234567" }, now).data).toBeNull();
     expect(parseReservationInput({ ...validReservation, postalCode: "28" }, now).data).toBeNull();
     expect(parseReservationInput({ ...validReservation, propertyFloors: -2 }, now).data).toBeNull();
   });

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { getBookableSlots, isPastDate, nextBusinessDate } from "@/lib/availability";
+import { normalizePhoneNumber } from "@/lib/phone";
 import { calculateQuote, formatCurrency, services } from "@/lib/pricing";
 import type { Discount, RepresentationType, ReservationInput, ServiceId } from "@/lib/types";
 
@@ -217,6 +218,9 @@ export default function BookingFlow() {
     if (currentStep === "customer") {
       if (!form.customerName || !form.email || !form.phone) {
         return "Completa tus datos personales.";
+      }
+      if (!normalizePhoneNumber(form.phone)) {
+        return "Introduce un teléfono válido, por ejemplo 600 000 000 o +34 600 000 000.";
       }
       if (!form.fullAddress || !form.street || !form.postalCode || !form.propertyFloors) {
         return "Completa los datos del inmueble.";
@@ -871,7 +875,7 @@ function StepCustomer({
         <h3 className="text-lg font-semibold text-white">Datos de contacto</h3>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <Field label="Nombre completo" value={form.customerName} onChange={(customerName) => onChange({ customerName })} />
-          <Field label="Número de teléfono" value={form.phone} onChange={(phone) => onChange({ phone })} />
+          <Field label="Número de teléfono" type="tel" value={form.phone} onChange={(phone) => onChange({ phone })} />
           <Field label="Correo electrónico" type="email" value={form.email} onChange={(email) => onChange({ email })} />
           <label className="md:col-span-2">
             <span className="text-sm text-slate-300">Información adicional</span>
