@@ -10,6 +10,16 @@
   box-sizing: border-box;
 }
 
+a,
+button,
+[role="button"],
+summary,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
 body {
   margin: 0;
   background:
@@ -42,10 +52,6 @@ html {
 .datum-contact-link {
   display: block;
   transition: color 160ms ease;
-}
-
-.datum-contact-link:hover {
-  color: #16d9e6;
 }
 
 @media (max-width: 640px) {
@@ -93,6 +99,12 @@ textarea {
   width: 2.5rem;
 }
 
-.calendar-arrow:hover {
-  border-color: #16d9e6;
+@media (hover: hover) and (pointer: fine) {
+  .datum-contact-link:hover {
+    color: #16d9e6;
+  }
+
+  .calendar-arrow:hover {
+    border-color: #16d9e6;
+  }
 }
