@@ -43,6 +43,18 @@ function hasSquareErrorCode(detail: string, code: string) {
   }
 }
 
+function squareErrorCodes(detail: string) {
+  try {
+    const payload = JSON.parse(detail) as { errors?: Array<{ code?: unknown }> };
+    return (payload.errors ?? [])
+      .map((error) => typeof error.code === "string" ? error.code : "")
+      .filter(Boolean)
+      .join(",");
+  } catch {
+    return "";
+  }
+}
+
 export async function createSquarePaymentLink(params: {
   reservationId: string;
   description: string;
@@ -147,17 +159,30 @@ export async function createSquarePaymentLink(params: {
 export async function deleteSquarePaymentLink(paymentLinkId: string) {
   if (paymentLinkId.startsWith("demo-")) return;
   const { token, host } = squareSettings();
-  const response = await fetch(`${host}/v2/online-checkout/payment-links/${encodeURIComponent(paymentLinkId)}`, {
+  const url = `${host}/v2/online-checkout/payment-links/${encodeURIComponent(paymentLinkId)}`;
+  const headers = {
+    "Content-Type": "application/json",
+    "Square-Version": "2026-05-20",
+    Authorization: `Bearer ${token}`
+  };
+  const response = await fetch(url, {
     method: "DELETE",
-    headers: {
-      "Square-Version": "2026-05-20",
-      Authorization: `Bearer ${token}`
-    }
+    headers
   });
 
-  if (!response.ok && response.status !== 404) {
-    throw new Error("No se pudo cerrar el enlace de pago caducado.");
-  }
+  if (response.ok || response.status === 404) return;
+
+  const detail = await response.text();
+  const verification = await fetch(url, { headers });
+
+  // Availability can be requested concurrently. If another request deleted the
+  // same link first, Square can reject this DELETE before the local row is
+  // updated. A missing link is already the desired end state.
+  if (verification.status === 404) return;
+
+  const codes = squareErrorCodes(detail);
+  const context = [response.status, codes].filter(Boolean).join("/");
+  throw new Error(`No se pudo cerrar el enlace de pago caducado${context ? ` (${context})` : ""}.`);
 }
 
 export function configuredSquareLocationId() {

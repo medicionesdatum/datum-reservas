@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { normalizePhoneNumber } from "@/lib/phone";
-import { createSquarePaymentLink, parseSquarePaymentNote, squarePaymentNote } from "@/lib/square";
+import {
+  createSquarePaymentLink,
+  deleteSquarePaymentLink,
+  parseSquarePaymentNote,
+  squarePaymentNote
+} from "@/lib/square";
 
 describe("Square payment references", () => {
   const reservationId = "30bd5f0a-1b7b-4ff7-97c4-e7a68a145c46";
@@ -17,7 +22,7 @@ describe("Square payment references", () => {
   });
 });
 
-describe("Square phone handling", () => {
+describe("Square integration behavior", () => {
   const reservationId = "30bd5f0a-1b7b-4ff7-97c4-e7a68a145c46";
 
   beforeEach(() => {
@@ -25,6 +30,52 @@ describe("Square phone handling", () => {
     vi.stubEnv("SQUARE_ACCESS_TOKEN", "square_test_token");
     vi.stubEnv("SQUARE_LOCATION_ID", "square_location");
     vi.stubEnv("SQUARE_ENVIRONMENT", "sandbox");
+  });
+
+  it("treats a concurrently deleted payment link as already closed", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ errors: [{ code: "BAD_REQUEST" }] }),
+          { status: 400 }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ errors: [{ code: "NOT_FOUND" }] }),
+          { status: 404 }
+        )
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(deleteSquarePaymentLink("payment_link_1")).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "DELETE" });
+    expect(fetchMock.mock.calls[1][1]).not.toHaveProperty("method");
+  });
+
+  it("keeps a pending reservation when the Square link is still active", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ errors: [{ code: "SERVICE_UNAVAILABLE" }] }),
+          { status: 503 }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ payment_link: { id: "payment_link_1" } }),
+          { status: 200 }
+        )
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(deleteSquarePaymentLink("payment_link_1")).rejects.toThrow(
+      "No se pudo cerrar el enlace de pago caducado (503/SERVICE_UNAVAILABLE)."
+    );
   });
 
   afterEach(() => {
