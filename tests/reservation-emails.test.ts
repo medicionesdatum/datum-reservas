@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  adminPendingReservationEmail,
   customerReservationConfirmedEmail,
   notificationEmails
 } from "@/lib/reservation-emails";
@@ -13,6 +14,12 @@ const reservation = {
   postalCode: "28013",
   surface: 90,
   propertyFloors: 2,
+  requiresInvoice: true,
+  billingName: "Estudio <Datum> SL",
+  billingTaxId: "B12345678",
+  billingAddress: "Calle Alcalá 10",
+  billingPostalCode: "28014",
+  billingCity: "Madrid",
   serviceId: "plans_2d" as const,
   representation: "geometria_real" as const,
   visitDate: "2026-10-01",
@@ -68,6 +75,14 @@ describe("reservation email content", () => {
       "info@medicionesdatum.es",
       "citas@medicionesdatum.es"
     ]);
+  });
+
+  it("includes escaped billing details in the internal notification", () => {
+    const html = adminPendingReservationEmail(reservation);
+
+    expect(html).toContain("Datos de facturación");
+    expect(html).toContain("Estudio &lt;Datum&gt; SL");
+    expect(html).toContain("B12345678");
   });
 
   it("defaults to both DATUM notification inboxes", () => {

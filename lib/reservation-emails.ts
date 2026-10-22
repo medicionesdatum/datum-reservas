@@ -11,6 +11,12 @@ type ReservationEmailRecord = Pick<
   | "postalCode"
   | "surface"
   | "propertyFloors"
+  | "requiresInvoice"
+  | "billingName"
+  | "billingTaxId"
+  | "billingAddress"
+  | "billingPostalCode"
+  | "billingCity"
   | "serviceId"
   | "representation"
   | "visitDate"
@@ -44,6 +50,12 @@ export function reservationFromDatabase(row: Record<string, unknown>): Reservati
     postalCode: String(row.postal_code ?? ""),
     surface: Number(row.surface ?? 0),
     propertyFloors: Number(row.property_floors ?? 0),
+    requiresInvoice: row.requires_invoice === true,
+    billingName: String(row.billing_name ?? ""),
+    billingTaxId: String(row.billing_tax_id ?? ""),
+    billingAddress: String(row.billing_address ?? ""),
+    billingPostalCode: String(row.billing_postal_code ?? ""),
+    billingCity: String(row.billing_city ?? ""),
     serviceId: String(row.service_id ?? "point_cloud") as ServiceId,
     representation: row.representation === "representacion_ortogonalizada"
       ? "representacion_ortogonalizada"
@@ -300,6 +312,13 @@ function adminReservationEmail({
         <strong>Depósito:</strong> ${escapeHtml(formatCurrency(record.deposit))}<br>
         <strong>Estado:</strong> ${escapeHtml(record.operationalStatus)}
       </p>
+      ${record.requiresInvoice ? `<p>
+        <strong>Datos de facturación:</strong><br>
+        ${escapeHtml(record.billingName)}<br>
+        ${escapeHtml(record.billingTaxId)}<br>
+        ${escapeHtml(record.billingAddress)}<br>
+        ${escapeHtml(record.billingPostalCode)} ${escapeHtml(record.billingCity)}
+      </p>` : "<p><strong>Factura:</strong> No solicitada</p>"}
       ${record.notes ? `<p><strong>Notas del cliente:</strong><br>${escapeHtml(record.notes)}</p>` : ""}
       <p>Reserva ID: ${escapeHtml(record.id)}</p>
     </div>

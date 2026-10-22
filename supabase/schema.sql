@@ -9,6 +9,12 @@ create table if not exists public.reservations (
   number text,
   floor text,
   postal_code text not null,
+  requires_invoice boolean not null default false,
+  billing_name text,
+  billing_tax_id text,
+  billing_address text,
+  billing_postal_code text,
+  billing_city text,
   surface numeric not null,
   property_floors integer not null,
   service_id text not null check (service_id in ('point_cloud', 'plans_2d', 'revit_3d')),
@@ -43,6 +49,14 @@ create table if not exists public.reservations (
 
 alter table public.reservations
 add column if not exists payment_expires_at timestamptz;
+
+alter table public.reservations
+add column if not exists requires_invoice boolean not null default false,
+add column if not exists billing_name text,
+add column if not exists billing_tax_id text,
+add column if not exists billing_address text,
+add column if not exists billing_postal_code text,
+add column if not exists billing_city text;
 
 update public.reservations
 set payment_expires_at = created_at + interval '30 minutes'

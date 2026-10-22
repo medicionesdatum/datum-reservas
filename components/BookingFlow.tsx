@@ -55,6 +55,12 @@ const initialForm: ReservationInput = {
   floor: "",
   postalCode: "",
   propertyFloors: 1,
+  requiresInvoice: false,
+  billingName: "",
+  billingTaxId: "",
+  billingAddress: "",
+  billingPostalCode: "",
+  billingCity: "",
   notes: "",
   couponCode: "",
   acceptsTerms: false,
@@ -224,6 +230,19 @@ export default function BookingFlow() {
       }
       if (!form.fullAddress || !form.street || !form.postalCode || !form.propertyFloors) {
         return "Completa los datos del inmueble.";
+      }
+      if (
+        form.requiresInvoice &&
+        (!form.billingName ||
+          !form.billingTaxId ||
+          !form.billingAddress ||
+          !form.billingPostalCode ||
+          !form.billingCity)
+      ) {
+        return "Completa los datos de facturación.";
+      }
+      if (form.requiresInvoice && !/^\d{5}$/.test(form.billingPostalCode)) {
+        return "Introduce un código postal de facturación válido.";
       }
     }
 
@@ -887,6 +906,55 @@ function StepCustomer({
           </label>
         </div>
       </div>
+
+      <div className="mt-7 border-t border-datum-line pt-7">
+        <h3 className="text-lg font-semibold text-white">Datos de facturación</h3>
+        <label className="mt-4 flex gap-3 border border-datum-line bg-white/[0.03] p-4 text-sm text-slate-200">
+          <input
+            checked={form.requiresInvoice}
+            className="mt-1 size-4 accent-datum-cyan"
+            onChange={(event) => onChange({ requiresInvoice: event.target.checked })}
+            type="checkbox"
+          />
+          <span>
+            <strong className="block font-semibold text-white">Necesito factura</strong>
+            <span className="mt-1 block text-slate-400">
+              Completa los datos fiscales que deben aparecer en la factura.
+            </span>
+          </span>
+        </label>
+        {form.requiresInvoice ? (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Field
+              className="md:col-span-2"
+              label="Nombre o razón social"
+              value={form.billingName}
+              onChange={(billingName) => onChange({ billingName })}
+            />
+            <Field
+              label="NIF, CIF o NIE"
+              value={form.billingTaxId}
+              onChange={(billingTaxId) => onChange({ billingTaxId })}
+            />
+            <Field
+              label="Código postal fiscal"
+              value={form.billingPostalCode}
+              onChange={(billingPostalCode) => onChange({ billingPostalCode })}
+            />
+            <Field
+              className="md:col-span-2"
+              label="Dirección fiscal"
+              value={form.billingAddress}
+              onChange={(billingAddress) => onChange({ billingAddress })}
+            />
+            <Field
+              label="Localidad fiscal"
+              value={form.billingCity}
+              onChange={(billingCity) => onChange({ billingCity })}
+            />
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -917,6 +985,10 @@ function StepPayment({
             <SummaryLine label="Representación" value={form.representation === "geometria_real" ? "Geometría real" : "Representación ortogonalizada"} />
           ) : null}
           <SummaryLine label="Fecha y hora" value={`${form.visitDate} ${form.visitTime}`} />
+          <SummaryLine
+            label="Factura"
+            value={form.requiresInvoice ? `Sí · ${form.billingName}` : "No solicitada"}
+          />
           <SummaryLine label="Base imponible" value={formatCurrency(quote.taxableBase)} />
           <SummaryLine label="IVA 21%" value={formatCurrency(quote.vat)} />
           <SummaryLine label="Total" value={formatCurrency(quote.total)} strong />

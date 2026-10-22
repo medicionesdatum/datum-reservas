@@ -10,6 +10,12 @@ const reservation: ReservationCsvRow = {
   full_address: "Calle Mayor 1, Madrid",
   postal_code: "28001",
   property_floors: 2,
+  requires_invoice: true,
+  billing_name: "Estudio Datum SL",
+  billing_tax_id: "B12345678",
+  billing_address: "Calle Alcalá 10",
+  billing_postal_code: "28014",
+  billing_city: "Madrid",
   service_id: "plans_2d",
   surface: 90,
   range_label: "51-100 m²",
@@ -39,6 +45,8 @@ describe("reservations CSV export", () => {
     expect(csv).toContain('"Planos 2D Estado Actual"');
     expect(csv).toContain('"Reserva confirmada","Depósito pagado"');
     expect(csv).toContain('"+34 600 000 000"');
+    expect(csv).toContain('"Solicita factura","Nombre o razón social","NIF/CIF/NIE"');
+    expect(csv).toContain('"Estudio Datum SL","B12345678","Calle Alcalá 10"');
   });
 
   it("escapes quotes and protects spreadsheet formulas in customer text", () => {

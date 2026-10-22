@@ -48,6 +48,12 @@ export function parseReservationInput(value: unknown, now = Date.now()):
   const fullAddress = text(input.fullAddress, 300);
   const street = text(input.street, 120);
   const postalCode = text(input.postalCode, 10);
+  const requiresInvoice = input.requiresInvoice === true;
+  const billingName = text(input.billingName, 160);
+  const billingTaxId = text(input.billingTaxId, 20).toUpperCase();
+  const billingAddress = text(input.billingAddress, 300);
+  const billingPostalCode = text(input.billingPostalCode, 10);
+  const billingCity = text(input.billingCity, 120);
   const visitDate = text(input.visitDate, 10);
   const visitTime = text(input.visitTime, 5);
 
@@ -68,6 +74,15 @@ export function parseReservationInput(value: unknown, now = Date.now()):
   if (!/^\d{5}$/.test(postalCode)) return { data: null, error: "Introduce un código postal válido." };
   if (!Number.isInteger(propertyFloors) || propertyFloors < 1 || propertyFloors > 20) {
     return { data: null, error: "Introduce un número de plantas válido." };
+  }
+  if (requiresInvoice && (!billingName || !billingTaxId || !billingAddress || !billingCity)) {
+    return { data: null, error: "Completa los datos de facturación." };
+  }
+  if (requiresInvoice && billingTaxId.length < 5) {
+    return { data: null, error: "Introduce un NIF, CIF o NIE válido." };
+  }
+  if (requiresInvoice && !/^\d{5}$/.test(billingPostalCode)) {
+    return { data: null, error: "Introduce un código postal de facturación válido." };
   }
   if (input.acceptsTerms !== true) return { data: null, error: "Debes aceptar los términos obligatorios." };
 
@@ -90,6 +105,12 @@ export function parseReservationInput(value: unknown, now = Date.now()):
       floor: text(input.floor, 30),
       postalCode,
       propertyFloors,
+      requiresInvoice,
+      billingName: requiresInvoice ? billingName : "",
+      billingTaxId: requiresInvoice ? billingTaxId : "",
+      billingAddress: requiresInvoice ? billingAddress : "",
+      billingPostalCode: requiresInvoice ? billingPostalCode : "",
+      billingCity: requiresInvoice ? billingCity : "",
       notes: text(input.notes, 2000),
       couponCode: text(input.couponCode, 64),
       acceptsTerms: true,

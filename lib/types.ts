@@ -45,6 +45,12 @@ export type ReservationInput = {
   floor?: string;
   postalCode: string;
   propertyFloors: number;
+  requiresInvoice: boolean;
+  billingName: string;
+  billingTaxId: string;
+  billingAddress: string;
+  billingPostalCode: string;
+  billingCity: string;
   notes?: string;
   couponCode?: string;
   acceptsTerms: boolean;

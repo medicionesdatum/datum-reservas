@@ -15,6 +15,12 @@ type ReservationRow = {
   full_address: string;
   postal_code: string;
   property_floors?: number;
+  requires_invoice?: boolean;
+  billing_name?: string;
+  billing_tax_id?: string;
+  billing_address?: string;
+  billing_postal_code?: string;
+  billing_city?: string;
   service_id: keyof typeof services;
   surface: number;
   range_label: string;
@@ -542,6 +548,21 @@ function ReservationDetail({ reservation, onUpdate, onFinalPayment }: { reservat
         <Info label="Depósito" value={formatCurrency(reservation.deposit)} />
         <Info label="Saldo pendiente" value={formatCurrency(reservation.pending_balance)} />
       </div>
+      {reservation.requires_invoice ? (
+        <div className="mt-6 border-l-4 border-datum-cyan bg-white/[0.03] p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-datum-cyan">Datos de facturación</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <Info label="Nombre o razón social" value={reservation.billing_name ?? "—"} />
+            <Info label="NIF, CIF o NIE" value={reservation.billing_tax_id ?? "—"} />
+            <Info
+              label="Domicilio fiscal"
+              value={[reservation.billing_address, reservation.billing_postal_code, reservation.billing_city]
+                .filter(Boolean)
+                .join(", ") || "—"}
+            />
+          </div>
+        </div>
+      ) : null}
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <label><span className="text-sm text-slate-300">Estado operativo</span><select className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" onChange={(event) => onUpdate({ operational_status: event.target.value })} value={reservation.operational_status}>{statuses.map((status) => <option key={status} value={status}>{formatStatus(status)}</option>)}</select></label>
         <label><span className="text-sm text-slate-300">Estado de pago</span><select className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" onChange={(event) => onUpdate({ payment_status: event.target.value })} value={reservation.payment_status}><option value="pendiente">Pendiente</option><option value="deposito_pagado">Depósito pagado</option><option value="pagado_completo">Pagado por completo</option></select></label>

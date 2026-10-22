@@ -95,7 +95,13 @@ export const notionReservationSchema: Record<string, Record<string, unknown>> = 
   "Notas cliente": { rich_text: {} },
   "Notas internas DATUM": { rich_text: {} },
   "Fecha de compra": { date: {} },
-  "Acepta marketing": { checkbox: {} }
+  "Acepta marketing": { checkbox: {} },
+  "Solicita factura": { checkbox: {} },
+  "Nombre o razón social": { rich_text: {} },
+  "NIF/CIF/NIE": { rich_text: {} },
+  "Dirección fiscal": { rich_text: {} },
+  "Código postal fiscal": { rich_text: {} },
+  "Localidad fiscal": { rich_text: {} }
 };
 
 let preparedDatabasePromise: Promise<PreparedNotionDatabase> | null = null;
@@ -388,6 +394,12 @@ export function buildNotionReservationProperties(
   setProperty(properties, schema, ["Notas internas DATUM"], row.internal_notes);
   setProperty(properties, schema, ["Fecha de compra"], row.created_at);
   setProperty(properties, schema, ["Acepta marketing"], row.accepts_marketing);
+  setProperty(properties, schema, ["Solicita factura"], row.requires_invoice);
+  setProperty(properties, schema, ["Nombre o razón social"], row.billing_name);
+  setProperty(properties, schema, ["NIF/CIF/NIE"], row.billing_tax_id);
+  setProperty(properties, schema, ["Dirección fiscal"], row.billing_address);
+  setProperty(properties, schema, ["Código postal fiscal"], row.billing_postal_code);
+  setProperty(properties, schema, ["Localidad fiscal"], row.billing_city);
 
   // Aprovecha las columnas de contacto ya existentes en CRM DATUM sin modificar su tipo.
   setProperty(properties, schema, ["Nombre"], row.customer_name);

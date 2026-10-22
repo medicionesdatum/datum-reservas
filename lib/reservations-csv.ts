@@ -9,6 +9,12 @@ export type ReservationCsvRow = {
   full_address: string;
   postal_code: string;
   property_floors?: number;
+  requires_invoice?: boolean;
+  billing_name?: string | null;
+  billing_tax_id?: string | null;
+  billing_address?: string | null;
+  billing_postal_code?: string | null;
+  billing_city?: string | null;
   service_id: keyof typeof services;
   surface: number;
   range_label: string;
@@ -55,6 +61,12 @@ const headers = [
   "Dirección",
   "Código postal",
   "Plantas del inmueble",
+  "Solicita factura",
+  "Nombre o razón social",
+  "NIF/CIF/NIE",
+  "Dirección fiscal",
+  "Código postal fiscal",
+  "Localidad fiscal",
   "Servicio",
   "Superficie (m²)",
   "Rango",
@@ -100,6 +112,12 @@ export function buildReservationsCsv(reservations: ReservationCsvRow[]) {
     reservation.full_address,
     reservation.postal_code,
     reservation.property_floors,
+    reservation.requires_invoice ? "Sí" : "No",
+    reservation.billing_name,
+    reservation.billing_tax_id,
+    reservation.billing_address,
+    reservation.billing_postal_code,
+    reservation.billing_city,
     services[reservation.service_id]?.name ?? reservation.service_id,
     reservation.surface,
     reservation.range_label,

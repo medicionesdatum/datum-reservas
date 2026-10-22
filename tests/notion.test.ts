@@ -32,6 +32,12 @@ const reservation = {
   phone: "+34 600 000 000",
   full_address: "Calle Mayor 1, Madrid",
   property_floors: 2,
+  requires_invoice: true,
+  billing_name: "Estudio Datum SL",
+  billing_tax_id: "B12345678",
+  billing_address: "Calle Alcalá 10",
+  billing_postal_code: "28014",
+  billing_city: "Madrid",
   service_id: "plans_2d",
   surface: 90,
   range_label: "51-100 m²",
@@ -95,5 +101,9 @@ describe("Notion reservation sync", () => {
     expect(propertyByName("Estado de pago")).toEqual({ select: { name: "Depósito pagado" } });
     expect(propertyByName("Total")).toEqual({ number: 544.5 });
     expect(propertyByName("Acepta marketing")).toEqual({ checkbox: false });
+    expect(propertyByName("Solicita factura")).toEqual({ checkbox: true });
+    expect(propertyByName("NIF/CIF/NIE")).toEqual({
+      rich_text: [{ type: "text", text: { content: "B12345678" } }]
+    });
   });
 });

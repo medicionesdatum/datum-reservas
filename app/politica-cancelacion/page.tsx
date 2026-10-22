@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PublicInfoPage } from "@/components/PublicInfoPage";
 import { absoluteUrl, site } from "@/lib/site-content";
 
@@ -41,6 +42,24 @@ export default function CancellationPolicyPage() {
         Si alguna condición cambia antes de la visita, debe comunicarse cuanto
         antes a {site.email}.
       </p>
+      <div className="border-l-4 border-datum-cyan bg-white/[0.04] px-6 py-6 md:px-8">
+        <p className="m-0 text-xs font-semibold uppercase tracking-[0.2em] text-datum-cyan">
+          Gestión de la reserva
+        </p>
+        <h2 className="mt-3 text-2xl font-semibold text-white">
+          ¿Necesitas cambiar la fecha de tu cita?
+        </h2>
+        <p className="mt-3 text-slate-300">
+          Indica el nombre de la reserva, la fecha actual y las alternativas que
+          te encajan. El equipo de DATUM revisará la disponibilidad contigo.
+        </p>
+        <Link
+          className="focus-ring mt-6 inline-flex min-h-12 items-center justify-center bg-datum-cyan px-6 py-3 text-sm font-semibold text-datum-ink transition hover:bg-white"
+          href="/contacto"
+        >
+          Contactar con DATUM <span aria-hidden="true" className="ml-3">→</span>
+        </Link>
+      </div>
     </PublicInfoPage>
   );
 }

@@ -17,6 +17,12 @@ const validReservation = {
   street: "Madrid",
   postalCode: "28001",
   propertyFloors: 1,
+  requiresInvoice: false,
+  billingName: "",
+  billingTaxId: "",
+  billingAddress: "",
+  billingPostalCode: "",
+  billingCity: "",
   acceptsTerms: true,
   acceptsMarketing: false
 };
@@ -40,5 +46,24 @@ describe("reservation validation", () => {
     expect(parseReservationInput({ ...validReservation, phone: "1234567" }, now).data).toBeNull();
     expect(parseReservationInput({ ...validReservation, postalCode: "28" }, now).data).toBeNull();
     expect(parseReservationInput({ ...validReservation, propertyFloors: -2 }, now).data).toBeNull();
+  });
+
+  it("requires and normalizes billing data when an invoice is requested", () => {
+    const invoiced = {
+      ...validReservation,
+      requiresInvoice: true,
+      billingName: "  Estudio Datum SL  ",
+      billingTaxId: " b12345678 ",
+      billingAddress: "Calle Alcalá 10",
+      billingPostalCode: "28014",
+      billingCity: "Madrid"
+    };
+
+    const result = parseReservationInput(invoiced, now);
+    expect(result.error).toBeNull();
+    expect(result.data?.billingName).toBe("Estudio Datum SL");
+    expect(result.data?.billingTaxId).toBe("B12345678");
+    expect(parseReservationInput({ ...invoiced, billingTaxId: "" }, now).data).toBeNull();
+    expect(parseReservationInput({ ...invoiced, billingPostalCode: "28" }, now).data).toBeNull();
   });
 });
