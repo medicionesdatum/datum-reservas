@@ -126,6 +126,12 @@ const revit3dImages = [
   }
 ] as const;
 
+const serviceVideos: Record<string, string> = {
+  "point-cloud": "nUV_rddYfdE",
+  "plans-2d": "NjVsrpVgzJ4",
+  "revit-3d": "vVh1I9OCEso"
+};
+
 export default function ServicesPage() {
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -451,6 +457,7 @@ function ServiceMedia({
   const hasGallery = serviceImages !== null;
   const isPlans2dGallery = serviceId === "plans-2d";
   const isRevit3dGallery = serviceId === "revit-3d";
+  const videoId = serviceVideos[serviceId];
 
   return (
     <div
@@ -463,14 +470,15 @@ function ServiceMedia({
           : "grid-cols-2"
       }`}
     >
-      <div className="col-span-full flex aspect-video items-center justify-center rounded-lg border border-dashed border-datum-line bg-datum-panel/45 p-5 text-center">
-        <div>
-          <p className="text-sm font-semibold text-slate-200">Vídeo de YouTube</p>
-          <p className="mt-2 text-xs leading-5 text-slate-500">
-            Aquí irá el vídeo de {serviceName}.
-          </p>
-        </div>
-      </div>
+      <iframe
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+        className="col-span-full aspect-video w-full rounded-lg border border-datum-line bg-datum-panel/45"
+        loading="lazy"
+        referrerPolicy="strict-origin-when-cross-origin"
+        src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
+        title={`Vídeo de ${serviceName}`}
+      />
       {serviceImages
         ? serviceImages.map((image) => (
             <figure
