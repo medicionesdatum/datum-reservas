@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
+import type { BlogPost } from "@/lib/blog-shared";
 import { formatCurrency, services } from "@/lib/pricing";
 import { getAllowedSlots } from "@/lib/availability";
 import { buildReservationsCsv } from "@/lib/reservations-csv";
+
+const AdminBlogView = dynamic(() =>
+  import("@/components/AdminBlogView").then((module) => module.AdminBlogView)
+);
 
 type ReservationRow = {
   id: string;
@@ -66,7 +72,7 @@ type DiscountCode = {
   created_at?: string;
 };
 
-type AdminView = "resumen" | "calendario" | "reservas" | "clientes" | "descuentos";
+type AdminView = "resumen" | "calendario" | "reservas" | "clientes" | "descuentos" | "blog";
 
 const statuses = [
   "nueva_solicitud", "pendiente_de_pago", "deposito_pagado", "reserva_confirmada",
@@ -88,7 +94,8 @@ const viewLabels: { id: AdminView; label: string; short: string }[] = [
   { id: "calendario", label: "Calendario", short: "C" },
   { id: "reservas", label: "Reservas", short: "A" },
   { id: "clientes", label: "Clientes", short: "P" },
-  { id: "descuentos", label: "Descuentos", short: "%" }
+  { id: "descuentos", label: "Descuentos", short: "%" },
+  { id: "blog", label: "Blog", short: "B" }
 ];
 
 function formatStatus(status: string) {
@@ -105,6 +112,7 @@ export default function AdminDashboard() {
   const [reservations, setReservations] = useState<ReservationRow[]>([]);
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -115,24 +123,27 @@ export default function AdminDashboard() {
     setIsLoading(true);
     setMessage("");
     const headers = { "x-admin-email": email, "x-admin-password": password };
-    const [reservationResponse, blockResponse, discountResponse] = await Promise.all([
+    const [reservationResponse, blockResponse, discountResponse, blogResponse] = await Promise.all([
       fetch("/api/admin/reservations", { headers }),
       fetch("/api/admin/blocked-slots", { headers }),
-      fetch("/api/admin/discount-codes", { headers })
+      fetch("/api/admin/discount-codes", { headers }),
+      fetch("/api/admin/blog", { headers })
     ]);
     const reservationPayload = await reservationResponse.json();
     const blockPayload = await blockResponse.json();
     const discountPayload = await discountResponse.json();
+    const blogPayload = await blogResponse.json();
     setIsLoading(false);
 
-    if (!reservationResponse.ok || !blockResponse.ok || !discountResponse.ok) {
-      setMessage(reservationPayload.error ?? blockPayload.error ?? discountPayload.error ?? "No se pudo acceder al panel.");
+    if (!reservationResponse.ok || !blockResponse.ok || !discountResponse.ok || !blogResponse.ok) {
+      setMessage(reservationPayload.error ?? blockPayload.error ?? discountPayload.error ?? blogPayload.error ?? "No se pudo acceder al panel.");
       return;
     }
 
     setReservations(reservationPayload.reservations ?? []);
     setBlockedSlots(blockPayload.blockedSlots ?? []);
     setDiscountCodes(discountPayload.discountCodes ?? []);
+    setBlogPosts(blogPayload.blogPosts ?? []);
     setSelectedId(reservationPayload.reservations?.[0]?.id ?? "");
     setIsLoaded(true);
     if (reservationPayload.demo) {
@@ -284,6 +295,7 @@ export default function AdminDashboard() {
         {view === "reservas" ? <ReservationsView reservations={reservations} selectedId={selectedId} onSelect={setSelectedId} onUpdate={updateReservation} email={email} password={password} setMessage={setMessage} /> : null}
         {view === "clientes" ? <ClientsView reservations={reservations} onOpenReservation={(id) => { setSelectedId(id); setView("reservas"); }} /> : null}
         {view === "descuentos" ? <DiscountCodesView discountCodes={discountCodes} onCreate={createDiscountCode} onUpdate={updateDiscountCode} onDelete={deleteDiscountCode} /> : null}
+        {view === "blog" ? <AdminBlogView posts={blogPosts} email={email} password={password} onPostsChange={setBlogPosts} setMessage={setMessage} /> : null}
       </main>
     </div>
   );

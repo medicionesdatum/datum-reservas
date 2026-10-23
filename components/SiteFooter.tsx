@@ -60,6 +60,9 @@ export function SiteFooter() {
             <Link className="transition hover:text-datum-cyan" href="/sobre-datum">
               Sobre DATUM
             </Link>
+            <Link className="transition hover:text-datum-cyan" href="/blog">
+              Blog
+            </Link>
             <Link className="transition hover:text-datum-cyan" href="/contacto">
               Contacto
             </Link>

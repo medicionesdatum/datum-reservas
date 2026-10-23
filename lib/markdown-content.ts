@@ -97,6 +97,19 @@ ${commonFooter}`
     };
   }
 
+  if (pathname === "/blog") {
+    return {
+      status: 200,
+      body: `# Blog de DATUM Mediciones
+
+DATUM publica guías, procesos e ideas sobre escaneado láser 3D, nubes de puntos, planos 2D, modelos Revit y documentación técnica de inmuebles.
+
+Consulta los artículos publicados en ${site.url}/blog.
+
+${commonFooter}`
+    };
+  }
+
   if (pathname === "/privacidad") {
     return {
       status: 200,

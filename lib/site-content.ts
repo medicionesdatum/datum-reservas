@@ -41,6 +41,12 @@ export const publicPages = [
     description: "Quiénes somos y cómo trabaja DATUM Mediciones."
   },
   {
+    path: "/blog",
+    title: "Blog",
+    description:
+      "Guías e innovación sobre escaneado láser 3D, nubes de puntos, planos 2D y modelos Revit."
+  },
+  {
     path: "/contacto",
     title: "Contacto",
     description: "Datos de contacto y atención de DATUM Mediciones."

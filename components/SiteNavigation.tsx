@@ -62,6 +62,13 @@ export function SiteNavigation({ compact = false }: { compact?: boolean }) {
         <MoreInfoMenu onNavigate={closeMobileMenu} />
         <Link
           className={navButtonClass}
+          href="/blog"
+          onClick={closeMobileMenu}
+        >
+          Blog
+        </Link>
+        <Link
+          className={navButtonClass}
           href="/servicios#preguntas-frecuentes"
           onClick={closeMobileMenu}
         >
