@@ -51,6 +51,9 @@ No incluir aqui contrasenas, tokens, API keys ni claves privadas. Guardar esos d
   - `square_webhook_events`
   - `discount_codes`
   - `discount_code_redemptions`
+  - `blog_posts`
+- Storage clave:
+  - `blog-images`
 
 ## Dominio / DNS
 
@@ -65,7 +68,8 @@ No incluir aqui contrasenas, tokens, API keys ni claves privadas. Guardar esos d
   - Registros de email, DKIM, SPF, MX.
 - Estado:
   - Resend usa DNS del dominio para enviar emails.
-  - Pendiente de confirmar: si la web publica usara un dominio propio distinto al dominio de Vercel.
+  - Web publica principal: `https://medicionesdatum.es`.
+  - Dominio tecnico de respaldo: `https://datum-reservas.vercel.app`.
 
 ## Square
 
@@ -100,10 +104,22 @@ No incluir aqui contrasenas, tokens, API keys ni claves privadas. Guardar esos d
   - Confirmacion al cliente cuando Square confirma el deposito.
   - Confirmacion interna cuando el deposito queda pagado.
 
+## Notion
+
+- Sirve para: mantener una copia operativa de las reservas confirmadas como CRM.
+- Debe tener acceso: cliente propietario y personal autorizado que gestione clientes.
+- Proteger:
+  - `NOTION_TOKEN`.
+  - `NOTION_DATABASE_ID`.
+  - Permisos de la integracion sobre la base de datos.
+- Importante:
+  - Supabase sigue siendo la fuente principal de datos.
+  - La sincronizacion usa el UUID de la reserva para evitar duplicados.
+
 ## Portal Administrativo
 
 - URL: `/admin` dentro de la web desplegada.
-- Sirve para: operar reservas, agenda, bloqueos, clientes y descuentos.
+- Sirve para: operar reservas, agenda, bloqueos, clientes, descuentos y articulos del blog.
 - Debe tener acceso: personal autorizado por DATUM.
 - Nivel recomendado:
   - Solo usuarios internos autorizados.
@@ -145,7 +161,7 @@ El proyecto fue creado y configurado con cuentas del cliente. El cliente conserv
 
 ## Recomendaciones de entrega
 
-- Confirmar que el cliente puede entrar a GitHub, Vercel, Supabase, Square, Resend y dominio/DNS.
+- Confirmar que el cliente puede entrar a GitHub, Vercel, Supabase, Square, Resend, Notion y dominio/DNS.
 - Confirmar que los metodos de pago y facturacion estan a nombre del cliente.
 - Guardar credenciales y claves en un gestor seguro.
 - Revocar accesos de soporte cuando ya no sean necesarios.

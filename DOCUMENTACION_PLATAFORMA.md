@@ -10,7 +10,7 @@ DATUM Reservas es una plataforma web para que clientes de DATUM Mediciones pueda
 
 El sistema calcula el precio segun superficie, servicio y adicionales, permite elegir una fecha disponible, recoge datos del cliente e inmueble, genera un enlace de pago de deposito con Square y guarda la reserva en Supabase.
 
-Incluye un portal administrativo en `/admin` para gestionar reservas, agenda, clientes, bloqueos de horario y codigos de descuento.
+Incluye un portal administrativo en `/admin` para gestionar reservas, agenda, clientes, bloqueos de horario, codigos de descuento y articulos del blog.
 
 ## Flujo principal del usuario
 
@@ -58,6 +58,9 @@ Tablas principales:
 - `square_webhook_events`: eventos procesados de Square para evitar duplicados.
 - `discount_codes`: codigos de descuento.
 - `discount_code_redemptions`: control de uso de cupones por email cuando aplica `1 uso por cliente`.
+- `blog_posts`: borradores y articulos publicados del blog.
+
+Las portadas del blog se guardan en el bucket publico `blog-images` de Supabase Storage. Se aceptan imagenes JPG, PNG y WebP de hasta 5 MB.
 
 ## Informacion guardada en base de datos
 
@@ -132,7 +135,7 @@ Repositorio de codigo fuente.
 
 ### Dominio/DNS
 
-Se usa para la configuracion de correo transaccional con Resend. El dominio exacto de la web publica con dominio propio queda pendiente de confirmar si se usara uno distinto al dominio de Vercel.
+Se usa para la web publica y la configuracion de correo transaccional con Resend. El dominio principal confirmado es `https://medicionesdatum.es`; `https://datum-reservas.vercel.app` queda como dominio tecnico de Vercel.
 
 ## Que puede administrar el cliente
 
@@ -153,6 +156,9 @@ Desde `/admin`, el cliente puede:
 - Exportar las reservas a CSV desde Clientes.
 - Crear, activar, desactivar y eliminar codigos de descuento.
 - Configurar codigos con limite total, fecha de vencimiento, base minima y uso unico por email.
+- Crear y editar articulos del blog.
+- Guardar articulos como borrador o publicarlos.
+- Subir imagenes de portada y eliminar articulos.
 
 ## Politicas y reglas relevantes
 
@@ -176,4 +182,5 @@ Desde `/admin`, el cliente puede:
 - El envio de emails depende de Resend y de que el dominio este verificado.
 - El webhook de Square debe mantenerse activo y con la URL correcta.
 - La eliminacion de codigos de descuento es definitiva.
-- Pendiente de confirmar: dominio final publico si se conectara un dominio distinto a `datum-reservas.vercel.app`.
+- La eliminacion de articulos del blog es definitiva.
+- El dominio publico principal es `medicionesdatum.es`.

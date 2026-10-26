@@ -6,3 +6,16 @@ tsconfig.tsbuildinfo
 npm-debug.log*
 # next-agents-md
 .next-docs/
+
+# Archivos locales de macOS
+.DS_Store
+
+# Producción creativa local: se entrega en un paquete separado del código web
+/deliverables/
+/scripts/create_datum_*.py
+/scripts/edit_datum_reel*.sh
+/scripts/generate-datum-*.mjs
+/scripts/generate-social-carousels.mjs
+
+# Documento ajeno al proyecto DATUM
+/Guia_de_posicionamiento_y_visibilidad_para_LUM.docx

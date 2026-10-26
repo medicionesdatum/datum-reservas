@@ -136,6 +136,21 @@ Importante:
 - El uso se contabiliza cuando Square confirma el pago.
 - Si el cliente abandona el checkout, no se consume el cupon.
 
+### Blog
+
+Permite crear, editar, publicar y eliminar articulos sin modificar el codigo.
+
+Campos disponibles:
+
+- Titulo y direccion publica (`slug`).
+- Categoria y autor.
+- Resumen para el listado del blog y buscadores.
+- Imagen de portada mediante URL o carga desde el equipo.
+- Contenido con formato Markdown sencillo.
+- Estado de borrador o publicado.
+
+Las imagenes pueden ser JPG, PNG o WebP y deben pesar como maximo 5 MB. Antes de publicar, revisar el titulo, la direccion, el resumen y la vista previa de la portada. La eliminacion de un articulo es definitiva.
+
 ## Estados de reserva
 
 Estados operativos disponibles:

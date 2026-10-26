@@ -2,6 +2,16 @@
 
 Plataforma web para cotizar, reservar y pagar mediciones tecnicas de DATUM Mediciones.
 
+Web de produccion: [https://medicionesdatum.es](https://medicionesdatum.es)
+
+## Entrega y continuidad
+
+- `ENTREGA_DANIEL.md`: puesta en marcha, accesos y flujo recomendado para continuar con Claude Code o ChatGPT/Codex.
+- `ACCESOS_Y_ENTREGA.md`: titularidad y permisos de los servicios externos.
+- `DOCUMENTACION_PLATAFORMA.md`: funcionamiento tecnico y operativo.
+- `GUIA_PORTAL_ADMIN.md`: uso diario del panel de administracion.
+- `AGENTS.md`: instrucciones persistentes para asistentes de programacion.
+
 ## Descripcion
 
 La aplicacion permite que un cliente seleccione un servicio, introduzca los datos del inmueble, elija fecha y hora disponibles, calcule el precio, aplique un codigo de descuento y pague un deposito mediante Square. Incluye un portal administrativo para revisar reservas, agenda, clientes, bloqueos de horario, estados de pago y codigos de descuento.
