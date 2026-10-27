@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { blogCoverStyle } from "@/lib/blog";
 
 describe("blogCoverStyle", () => {
-  it("muestra la portada una sola vez, centrada y cubriendo la caja", () => {
+  it("muestra la portada una sola vez, entera y centrada", () => {
     const style = blogCoverStyle("https://example.com/portada.jpg");
     expect(style?.backgroundImage).toContain('url("https://example.com/portada.jpg")');
     expect(style).toMatchObject({
-      backgroundSize: "cover",
+      backgroundSize: "contain",
       backgroundRepeat: "no-repeat",
       backgroundPosition: "center"
     });

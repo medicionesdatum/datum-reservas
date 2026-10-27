@@ -53,7 +53,7 @@ export default async function BlogPage() {
               <article className="grid overflow-hidden border border-datum-line bg-[#091827] lg:grid-cols-[1.15fr_0.85fr]">
                 <Link
                   aria-label={`Leer ${featured.title}`}
-                  className={`blog-cover ${featuredCover ? "" : "blog-visual"} min-h-72 border-b border-datum-line lg:min-h-[470px] lg:border-b-0 lg:border-r`}
+                  className={`blog-cover ${featuredCover ? "" : "blog-visual"} aspect-[16/9] border-b border-datum-line lg:border-b-0 lg:border-r`}
                   href={`/blog/${featured.slug}`}
                   style={featuredCover}
                 >
