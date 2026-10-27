@@ -6,7 +6,7 @@ import { isAdminAuthorized } from "@/lib/admin-auth";
 import { syncReservationToNotionSafely } from "@/lib/notion";
 
 export async function POST(request: Request) {
-  if (!isAdminAuthorized(request)) {
+  if (!(await isAdminAuthorized(request))) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 

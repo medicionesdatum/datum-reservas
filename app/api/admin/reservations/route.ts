@@ -12,7 +12,7 @@ const operationalStatuses = new Set([
 const paymentStatuses = new Set(["pendiente", "deposito_pagado", "pagado_completo"]);
 
 export async function GET(request: Request) {
-  if (!isAdminAuthorized(request)) {
+  if (!(await isAdminAuthorized(request))) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  if (!isAdminAuthorized(request)) {
+  if (!(await isAdminAuthorized(request))) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 

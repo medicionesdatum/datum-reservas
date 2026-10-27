@@ -3,7 +3,7 @@ import { isAdminAuthorized } from "@/lib/admin-auth";
 import { listSquareLocations } from "@/lib/square";
 
 export async function GET(request: Request) {
-  if (!isAdminAuthorized(request)) {
+  if (!(await isAdminAuthorized(request))) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 

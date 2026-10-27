@@ -15,6 +15,16 @@ Para entrar se necesita:
 
 Estos accesos se configuran mediante variables de entorno y no deben compartirse publicamente.
 
+En la pantalla de acceso, el icono del ojo muestra u oculta la clave mientras se escribe.
+
+### Cambiar la clave
+
+Dentro del portal, la seccion `Cambiar clave` permite definir una clave nueva (minimo 12 caracteres). La clave nueva se guarda cifrada (hash) en Supabase y pasa a tener prioridad sobre `ADMIN_PASSWORD`. Es una unica clave compartida por todo el equipo autorizado.
+
+Requisito previo, una sola vez: ejecutar `supabase/20261027_admin_password.sql` en el SQL Editor de Supabase. Hasta entonces el acceso sigue funcionando con `ADMIN_PASSWORD`, pero guardar una clave nueva fallara.
+
+Si se pierde la clave nueva, ejecutar `delete from public.admin_credentials;` en Supabase para volver a usar `ADMIN_PASSWORD`.
+
 ## Secciones del admin
 
 ### Resumen
