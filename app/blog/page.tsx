@@ -50,7 +50,7 @@ export default async function BlogPage() {
         <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-20">
           {featured ? (
             <>
-              <article className="grid overflow-hidden border border-datum-line bg-[#091827] lg:grid-cols-[1.15fr_0.85fr]">
+              <article className="grid overflow-hidden border border-datum-line bg-[#091827] lg:grid-cols-[1.5fr_1fr]">
                 <Link
                   aria-label={`Leer ${featured.title}`}
                   className={`blog-cover ${featuredCover ? "" : "blog-visual"} aspect-[16/9] border-b border-datum-line lg:border-b-0 lg:border-r`}
@@ -59,13 +59,16 @@ export default async function BlogPage() {
                 >
                   {!featuredCover ? <span className="blog-visual-mark">DATUM / INSIGHT</span> : null}
                 </Link>
-                <div className="flex flex-col justify-center p-7 md:p-10 lg:p-12">
-                  <BlogMeta post={featured} />
-                  <h2 className="mt-5 text-3xl font-semibold leading-tight md:text-4xl">{featured.title}</h2>
-                  <p className="mt-5 text-base leading-7 text-slate-300">{featured.excerpt}</p>
-                  <Link className="mt-8 inline-flex items-center gap-3 font-semibold text-datum-cyan" href={`/blog/${featured.slug}`}>
-                    Leer artículo <span aria-hidden="true">→</span>
-                  </Link>
+                {/* En escritorio la altura la fija solo la portada 16:9; el texto se ajusta a ella. */}
+                <div className="lg:relative">
+                  <div className="flex flex-col justify-center p-7 md:p-10 lg:absolute lg:inset-0 lg:overflow-hidden lg:p-8">
+                    <BlogMeta post={featured} />
+                    <h2 className="mt-5 text-3xl font-semibold leading-tight md:text-4xl lg:mt-4 lg:text-2xl xl:text-3xl">{featured.title}</h2>
+                    <p className="mt-5 text-base leading-7 text-slate-300 lg:mt-4 lg:line-clamp-3">{featured.excerpt}</p>
+                    <Link className="mt-8 inline-flex items-center gap-3 font-semibold text-datum-cyan lg:mt-5" href={`/blog/${featured.slug}`}>
+                      Leer artículo <span aria-hidden="true">→</span>
+                    </Link>
+                  </div>
                 </div>
               </article>
 
