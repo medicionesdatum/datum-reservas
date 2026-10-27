@@ -60,6 +60,8 @@ export async function createSquarePaymentLink(params: {
   description: string;
   amountInCents: number;
   kind: PaymentKind;
+  /** Distingue enlaces del mismo tipo y reserva con importes distintos (Square rechaza reutilizar la clave). */
+  idempotencyKeySuffix?: string;
   customerEmail?: string;
   customerPhone?: string;
   demo?: boolean;
@@ -96,7 +98,7 @@ export async function createSquarePaymentLink(params: {
         Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({
-        idempotency_key: `${params.kind}-${params.reservationId}${idempotencySuffix}`,
+        idempotency_key: `${params.kind}-${params.reservationId}${params.idempotencyKeySuffix ?? ""}${idempotencySuffix}`,
         quick_pay: {
           name: params.description,
           price_money: {

@@ -45,6 +45,8 @@ type ReservationRow = {
   operational_status: string;
   deposit_payment_link?: string;
   final_payment_link?: string;
+  adjusted_balance?: number | null;
+  balance_adjustment_reason?: string | null;
   notes?: string;
   internal_notes?: string;
   accepts_marketing?: boolean;
@@ -600,6 +602,19 @@ function ReservationsView({ reservations, selectedId, onSelect, onUpdate, email,
     onUpdate({ final_payment_link: payload.checkoutUrl, operational_status: "pendiente_de_saldo" });
   }
 
+  async function adjustBalance(amount: number, reason: string) {
+    if (!selected) return false;
+    const response = await fetch("/api/admin/balance-adjustment", { method: "POST", headers: { "Content-Type": "application/json", "x-admin-email": email, "x-admin-password": password }, body: JSON.stringify({ id: selected.id, amount, reason }) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(payload.error ?? "No se pudo generar el ajuste.");
+      return false;
+    }
+    onUpdate({ adjusted_balance: payload.adjusted_balance, balance_adjustment_reason: payload.balance_adjustment_reason, final_payment_link: payload.checkoutUrl, operational_status: "pendiente_de_saldo" });
+    setMessage("Enlace de ajuste generado. Ábrelo desde \"Abrir enlace del saldo\".");
+    return true;
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
       <aside>
@@ -613,17 +628,78 @@ function ReservationsView({ reservations, selectedId, onSelect, onUpdate, email,
         </div>
       </aside>
       <section className="min-w-0 border-t border-datum-line pt-6 xl:border-l xl:border-t-0 xl:pl-7 xl:pt-0">
-        {selected ? <ReservationDetail reservation={selected} onUpdate={onUpdate} onFinalPayment={generateFinalPayment} /> : <Empty text="Selecciona una reserva para ver sus detalles." />}
+        {selected ? <ReservationDetail key={selected.id} reservation={selected} onUpdate={onUpdate} onFinalPayment={generateFinalPayment} onBalanceAdjustment={adjustBalance} /> : <Empty text="Selecciona una reserva para ver sus detalles." />}
       </section>
     </div>
   );
 }
 
-function ReservationDetail({ reservation, onUpdate, onFinalPayment }: { reservation: ReservationRow; onUpdate: (update: Partial<ReservationRow>) => void; onFinalPayment: () => void }) {
+function BalanceAdjustmentForm({ currentBalance, onSubmit, onCancel }: { currentBalance: number; onSubmit: (amount: number, reason: string) => Promise<boolean>; onCancel: () => void }) {
+  const [amountText, setAmountText] = useState("");
+  const [reason, setReason] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const amount = Number(amountText.trim().replace(",", "."));
+  const hasAmount = amountText.trim() !== "" && Number.isFinite(amount);
+  const difference = hasAmount ? Math.round((amount - currentBalance) * 100) / 100 : 0;
+
+  async function submit() {
+    setIsSaving(true);
+    const saved = await onSubmit(amount, reason);
+    setIsSaving(false);
+    if (saved) onCancel();
+  }
+
+  return (
+    <div className="mt-6 border-l-4 border-datum-cyan bg-white/[0.03] p-5">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-datum-cyan">Ajuste de importe</p>
+      <p className="mt-2 text-sm text-slate-400">Define el importe que cobrará Square en lugar del saldo actual ({formatCurrency(currentBalance)}). Puede ser mayor o menor. Se crea un enlace nuevo y el anterior se cierra.</p>
+      <div className="mt-4 grid gap-4 sm:grid-cols-[200px_1fr]">
+        <label className="block text-sm"><span className="text-slate-300">Importe a cobrar (€)</span><input className="focus-ring mt-2 w-full rounded border border-datum-line bg-white px-4 py-3" inputMode="decimal" onChange={(event) => setAmountText(event.target.value)} placeholder="0,00" value={amountText} /></label>
+        <label className="block text-sm"><span className="text-slate-300">Motivo (obligatorio)</span><input className="focus-ring mt-2 w-full rounded border border-datum-line bg-white px-4 py-3" maxLength={200} onChange={(event) => setReason(event.target.value)} placeholder="Ej. superficie real mayor a la declarada" value={reason} /></label>
+      </div>
+      {hasAmount ? <p className="mt-3 text-sm text-slate-300">Nuevo importe: <strong>{formatCurrency(amount)}</strong> · {difference === 0 ? "igual al saldo actual" : `${difference > 0 ? "+" : "−"}${formatCurrency(Math.abs(difference))} respecto al saldo actual`}</p> : null}
+      <div className="mt-4 flex flex-wrap gap-3">
+        <button className="rounded bg-datum-cyan px-4 py-3 text-sm font-semibold text-datum-ink disabled:opacity-50" disabled={isSaving || !hasAmount || reason.trim().length < 5} onClick={submit} type="button">{isSaving ? "Generando..." : "Generar enlace de ajuste"}</button>
+        <button className="rounded border border-datum-line px-4 py-3 text-sm text-slate-300" disabled={isSaving} onClick={onCancel} type="button">Cancelar</button>
+      </div>
+    </div>
+  );
+}
+
+function TransferInfoPanel({ amount, reference, onClose }: { amount: number; reference: string; onClose: () => void }) {
+  const [copied, setCopied] = useState("");
+  async function copy(label: string, value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(label);
+    } catch {
+      setCopied("");
+    }
+  }
+
+  return (
+    <div className="mt-6 border-l-4 border-datum-cyan bg-white/[0.03] p-5">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-datum-cyan">2º pago por transferencia</p>
+      <p className="mt-2 text-sm text-slate-400">Solo informativo: no genera ningún cobro ni cambia estados. Administración envía los datos bancarios directamente al cliente. Cuando llegue la transferencia, cambia el estado de pago a «Pagado por completo».</p>
+      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+        <div className="rounded border border-datum-line p-4"><dt className="text-xs uppercase tracking-[0.14em] text-slate-400">Importe a transferir</dt><dd className="mt-2 flex items-center justify-between gap-3 font-semibold">{formatCurrency(amount)}<button className="text-xs font-normal text-datum-cyan" onClick={() => copy("importe", amount.toFixed(2).replace(".", ","))} type="button">{copied === "importe" ? "Copiado" : "Copiar"}</button></dd></div>
+        <div className="rounded border border-datum-line p-4"><dt className="text-xs uppercase tracking-[0.14em] text-slate-400">Referencia de la reserva</dt><dd className="mt-2 flex items-center justify-between gap-3 font-semibold">{reference}<button className="text-xs font-normal text-datum-cyan" onClick={() => copy("referencia", reference)} type="button">{copied === "referencia" ? "Copiado" : "Copiar"}</button></dd></div>
+      </dl>
+      <button className="mt-4 rounded border border-datum-line px-4 py-3 text-sm text-slate-300" onClick={onClose} type="button">Cerrar</button>
+    </div>
+  );
+}
+
+function ReservationDetail({ reservation, onUpdate, onFinalPayment, onBalanceAdjustment }: { reservation: ReservationRow; onUpdate: (update: Partial<ReservationRow>) => void; onFinalPayment: () => void; onBalanceAdjustment: (amount: number, reason: string) => Promise<boolean> }) {
+  const [isAdjusting, setIsAdjusting] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const currentBalance = reservation.adjusted_balance != null ? Number(reservation.adjusted_balance) : Number(reservation.pending_balance);
   const additionalCount = reservation.additional_plans + reservation.additional_sections + reservation.additional_elevations;
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs text-datum-cyan">{reservation.id}</p><h2 className="mt-2 text-2xl font-semibold">{reservation.customer_name}</h2><p className="mt-2 text-sm text-slate-400">{reservation.email} · {reservation.phone}</p></div><button className="rounded bg-datum-cyan px-4 py-3 text-sm font-semibold text-datum-ink" onClick={onFinalPayment} type="button">Generar saldo en Square</button></div>
+      <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs text-datum-cyan">{reservation.id}</p><h2 className="mt-2 text-2xl font-semibold">{reservation.customer_name}</h2><p className="mt-2 text-sm text-slate-400">{reservation.email} · {reservation.phone}</p></div><div className="flex flex-wrap gap-3">{reservation.payment_status !== "pagado_completo" ? <button className="rounded border border-datum-line px-4 py-3 text-sm font-semibold text-slate-200" onClick={() => { setShowTransfer((current) => !current); setIsAdjusting(false); }} type="button">2º pago transferencia</button> : null}{reservation.payment_status !== "pagado_completo" ? <button className="rounded border border-datum-cyan px-4 py-3 text-sm font-semibold text-datum-cyan" onClick={() => { setIsAdjusting((current) => !current); setShowTransfer(false); }} type="button">Modificación / ajuste</button> : null}<button className="rounded bg-datum-cyan px-4 py-3 text-sm font-semibold text-datum-ink" onClick={onFinalPayment} type="button">Generar saldo en Square</button></div></div>
+      {showTransfer ? <TransferInfoPanel amount={currentBalance} onClose={() => setShowTransfer(false)} reference={reservation.id.slice(0, 8).toUpperCase()} /> : null}
+      {isAdjusting ? <BalanceAdjustmentForm currentBalance={currentBalance} onCancel={() => setIsAdjusting(false)} onSubmit={onBalanceAdjustment} /> : null}
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Info label="Servicio" value={services[reservation.service_id]?.name ?? reservation.service_id} />
         <Info label="Visita" value={`${formatShortDate(reservation.visit_date)} · ${reservation.visit_time}`} />
@@ -634,6 +710,7 @@ function ReservationDetail({ reservation, onUpdate, onFinalPayment }: { reservat
         <Info label="Total" value={formatCurrency(reservation.total)} />
         <Info label="Depósito" value={formatCurrency(reservation.deposit)} />
         <Info label="Saldo pendiente" value={formatCurrency(reservation.pending_balance)} />
+        {reservation.adjusted_balance != null ? <Info label="Saldo ajustado" value={`${formatCurrency(Number(reservation.adjusted_balance))}${reservation.balance_adjustment_reason ? ` · ${reservation.balance_adjustment_reason}` : ""}`} /> : null}
       </div>
       {reservation.requires_invoice ? (
         <div className="mt-6 border-l-4 border-datum-cyan bg-white/[0.03] p-5">

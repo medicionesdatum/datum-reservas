@@ -1,5 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
+import { expectedFinalBalance } from "@/lib/balance-adjustment";
 import { normalizeDiscountCode } from "@/lib/discount-codes";
 import { sendReservationEmailBatch } from "@/lib/email";
 import {
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
   }
 
   const expectedAmount = Math.round(
-    Number(kind === "deposit" ? reservation.deposit : reservation.pending_balance) * 100
+    (kind === "deposit" ? Number(reservation.deposit) : expectedFinalBalance(reservation)) * 100
   );
   if (payment?.amount_money?.currency !== "EUR" || Number(payment?.amount_money?.amount) !== expectedAmount) {
     return NextResponse.json({ error: "Payment amount mismatch" }, { status: 409 });

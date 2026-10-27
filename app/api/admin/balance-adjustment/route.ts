@@ -1,0 +1,95 @@
+import { randomUUID } from "node:crypto";
+import { after, NextResponse } from "next/server";
+import { isAdminAuthorized } from "@/lib/admin-auth";
+import { validateBalanceAdjustment } from "@/lib/balance-adjustment";
+import { syncReservationToNotionSafely } from "@/lib/notion";
+import { ConfigurationError, getBookingMode } from "@/lib/runtime-config";
+import { createSquarePaymentLink, deleteSquarePaymentLink } from "@/lib/square";
+import { getSupabaseAdmin } from "@/lib/supabase";
+
+/** Genera un enlace de Square por un importe de saldo ajustado (mayor o menor que el pendiente). */
+export async function POST(request: Request) {
+  if (!(await isAdminAuthorized(request))) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  let newPaymentLinkId: string | null = null;
+  let previousLinkClosed = false;
+  let reservationId = "";
+  try {
+    const body = await request.json().catch(() => null);
+    const id = body?.id;
+    if (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) {
+      return NextResponse.json({ error: "Falta una reserva válida." }, { status: 400 });
+    }
+    reservationId = id;
+
+    const adjustment = validateBalanceAdjustment({ amount: body?.amount, reason: body?.reason });
+    if ("error" in adjustment) {
+      return NextResponse.json({ error: adjustment.error }, { status: 400 });
+    }
+
+    if (getBookingMode() !== "live") {
+      throw new ConfigurationError("El ajuste de saldo solo está disponible con las integraciones activas.");
+    }
+
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new ConfigurationError("No se puede acceder a la base de datos.");
+    const { data: reservation, error: reservationError } = await supabase
+      .from("reservations")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (reservationError || !reservation) {
+      return NextResponse.json({ error: "Reserva no encontrada." }, { status: 404 });
+    }
+    if (reservation.payment_status === "pagado_completo") {
+      return NextResponse.json({ error: "Esta reserva ya está pagada por completo." }, { status: 409 });
+    }
+    if (reservation.payment_status !== "deposito_pagado") {
+      return NextResponse.json({ error: "El depósito debe estar confirmado antes de ajustar el saldo." }, { status: 409 });
+    }
+
+    // Un enlace de saldo anterior cobraría otro importe y el webhook lo rechazaría: se cierra antes.
+    if (reservation.final_payment_link && reservation.final_square_reference) {
+      await deleteSquarePaymentLink(reservation.final_square_reference);
+      previousLinkClosed = true;
+    }
+
+    const payment = await createSquarePaymentLink({
+      reservationId: id,
+      description: "Saldo final ajustado DATUM Mediciones",
+      amountInCents: adjustment.amountInCents,
+      kind: "final",
+      idempotencyKeySuffix: `-adj-${randomUUID()}`
+    });
+    newPaymentLinkId = payment.paymentLinkId;
+
+    const update = {
+      adjusted_balance: adjustment.amount,
+      balance_adjustment_reason: adjustment.reason,
+      final_payment_link: payment.checkoutUrl,
+      final_square_reference: payment.paymentLinkId,
+      operational_status: "pendiente_de_saldo"
+    };
+    const { error } = await supabase.from("reservations").update(update).eq("id", id);
+    if (error) throw error;
+
+    after(() => syncReservationToNotionSafely({ ...reservation, ...update }, "admin_balance_adjustment"));
+
+    return NextResponse.json({ ...payment, ...update });
+  } catch (error) {
+    if (newPaymentLinkId) await deleteSquarePaymentLink(newPaymentLinkId).catch(() => null);
+    if (previousLinkClosed && reservationId) {
+      // El enlace anterior ya no existe en Square: se limpia para que el panel no ofrezca uno muerto.
+      await getSupabaseAdmin()
+        ?.from("reservations")
+        .update({ final_payment_link: null, final_square_reference: null })
+        .eq("id", reservationId);
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "No se pudo generar el ajuste." },
+      { status: error instanceof ConfigurationError ? 503 : 500 }
+    );
+  }
+}
