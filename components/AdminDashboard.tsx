@@ -596,10 +596,26 @@ function ReservationsView({ reservations, selectedId, onSelect, onUpdate, email,
 
   async function generateFinalPayment() {
     if (!selected) return;
-    const response = await fetch("/api/admin/final-payment", { method: "POST", headers: { "Content-Type": "application/json", "x-admin-email": email, "x-admin-password": password }, body: JSON.stringify({ id: selected.id }) });
-    const payload = await response.json();
-    if (!response.ok) return setMessage(payload.error ?? "No se pudo generar el enlace.");
-    onUpdate({ final_payment_link: payload.checkoutUrl, operational_status: "pendiente_de_saldo" });
+    // La pestaña se abre al pulsar para que el navegador no la bloquee; después se redirige al enlace de Square.
+    const checkoutWindow = window.open("about:blank", "_blank");
+    try {
+      const response = await fetch("/api/admin/final-payment", { method: "POST", headers: { "Content-Type": "application/json", "x-admin-email": email, "x-admin-password": password }, body: JSON.stringify({ id: selected.id }) });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || typeof payload.checkoutUrl !== "string") {
+        checkoutWindow?.close();
+        return setMessage(payload.error ?? "No se pudo generar el enlace.");
+      }
+      onUpdate({ final_payment_link: payload.checkoutUrl, operational_status: "pendiente_de_saldo" });
+      if (checkoutWindow) {
+        checkoutWindow.opener = null;
+        checkoutWindow.location.href = payload.checkoutUrl;
+      } else {
+        setMessage("Enlace generado. Ábrelo con «Abrir enlace del saldo».");
+      }
+    } catch {
+      checkoutWindow?.close();
+      setMessage("No se pudo generar el enlace.");
+    }
   }
 
   async function adjustBalance(amount: number, reason: string) {
