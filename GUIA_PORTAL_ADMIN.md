@@ -17,6 +17,8 @@ Estos accesos se configuran mediante variables de entorno y no deben compartirse
 
 En la pantalla de acceso, el icono del ojo muestra u oculta la clave mientras se escribe.
 
+La sesion se mantiene abierta 14 dias en ese navegador (cookie segura, sin guardar la clave), aunque se recargue o se cierre la pestana. Para salir, usar `Cerrar sesion` en el menu lateral; en ordenadores compartidos conviene hacerlo siempre. Al cambiar la clave, las sesiones abiertas en otros dispositivos se cierran.
+
 ### Cambiar la clave
 
 Dentro del portal, la seccion `Cambiar clave` permite definir una clave nueva (minimo 12 caracteres). La clave nueva se guarda cifrada (hash) en Supabase y pasa a tener prioridad sobre `ADMIN_PASSWORD`. Es una unica clave compartida por todo el equipo autorizado.

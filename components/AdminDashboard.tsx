@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { BlogPost } from "@/lib/blog-shared";
 import { formatCurrency, services } from "@/lib/pricing";
 import { getAllowedSlots } from "@/lib/availability";
@@ -115,15 +115,16 @@ export default function AdminDashboard() {
   const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [view, setView] = useState<AdminView>("resumen");
   const [selectedId, setSelectedId] = useState("");
 
-  async function loadDashboard() {
+  async function loadDashboard(viaSession = false) {
     setIsLoading(true);
     setMessage("");
-    const headers = { "x-admin-email": email, "x-admin-password": password };
+    const headers: Record<string, string> = viaSession ? {} : { "x-admin-email": email, "x-admin-password": password };
     const [reservationResponse, blockResponse, discountResponse, blogResponse] = await Promise.all([
       fetch("/api/admin/reservations", { headers }),
       fetch("/api/admin/blocked-slots", { headers }),
@@ -147,9 +148,41 @@ export default function AdminDashboard() {
     setBlogPosts(blogPayload.blogPosts ?? []);
     setSelectedId(reservationPayload.reservations?.[0]?.id ?? "");
     setIsLoaded(true);
+    if (!viaSession) {
+      // Deja una cookie de sesión para no volver a pedir la clave al recargar.
+      await fetch("/api/admin/session", { method: "POST", headers }).catch(() => undefined);
+    }
     if (reservationPayload.demo) {
       setMessage("Modo de demostración: conecta Supabase para guardar reservas y bloqueos reales.");
     }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/session")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled || !payload?.email) return;
+        setEmail(payload.email);
+        return loadDashboard(true);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setIsCheckingSession(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Solo al abrir la página: restaura la sesión si la cookie sigue vigente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function logout() {
+    await fetch("/api/admin/session", { method: "DELETE" }).catch(() => undefined);
+    setIsLoaded(false);
+    setPassword("");
+    setMessage("");
+    setView("resumen");
   }
 
   async function updateReservation(update: Partial<ReservationRow>) {
@@ -251,8 +284,12 @@ export default function AdminDashboard() {
     setMessage("Código eliminado.");
   }
 
+  if (isCheckingSession) {
+    return <main className="grid min-h-screen place-items-center text-sm text-slate-400">Cargando...</main>;
+  }
+
   if (!isLoaded) {
-    return <AdminLogin email={email} password={password} message={message} isLoading={isLoading} onEmailChange={setEmail} onPasswordChange={setPassword} onSubmit={loadDashboard} />;
+    return <AdminLogin email={email} password={password} message={message} isLoading={isLoading} onEmailChange={setEmail} onPasswordChange={setPassword} onSubmit={() => loadDashboard()} />;
   }
 
   return (
@@ -263,7 +300,10 @@ export default function AdminDashboard() {
             <p className="text-xl font-semibold tracking-[0.12em]">DATUM<span className="text-datum-cyan">.</span></p>
             <p className="mt-1 text-xs text-slate-400">Centro de operaciones</p>
           </div>
-          <Link className="text-xs text-slate-400 hover:text-datum-cyan lg:mt-8 lg:block" href="/">Ver reservas públicas</Link>
+          <div className="text-right lg:mt-8 lg:text-left">
+            <Link className="block text-xs text-slate-400 hover:text-datum-cyan" href="/">Ver reservas públicas</Link>
+            <button className="mt-2 text-xs text-slate-400 hover:text-datum-cyan" onClick={logout} type="button">Cerrar sesión</button>
+          </div>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-4 lg:block lg:space-y-1 lg:px-4">
           {viewLabels.map((item) => (
