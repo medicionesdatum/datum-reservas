@@ -72,7 +72,7 @@ type DiscountCode = {
   created_at?: string;
 };
 
-type AdminView = "resumen" | "calendario" | "reservas" | "clientes" | "descuentos" | "blog";
+type AdminView = "resumen" | "calendario" | "reservas" | "clientes" | "descuentos" | "blog" | "seguridad";
 
 const statuses = [
   "nueva_solicitud", "pendiente_de_pago", "deposito_pagado", "reserva_confirmada",
@@ -95,7 +95,8 @@ const viewLabels: { id: AdminView; label: string; short: string }[] = [
   { id: "reservas", label: "Reservas", short: "A" },
   { id: "clientes", label: "Clientes", short: "P" },
   { id: "descuentos", label: "Descuentos", short: "%" },
-  { id: "blog", label: "Blog", short: "B" }
+  { id: "blog", label: "Blog", short: "B" },
+  { id: "seguridad", label: "Cambiar clave", short: "K" }
 ];
 
 function formatStatus(status: string) {
@@ -296,6 +297,7 @@ export default function AdminDashboard() {
         {view === "clientes" ? <ClientsView reservations={reservations} onOpenReservation={(id) => { setSelectedId(id); setView("reservas"); }} /> : null}
         {view === "descuentos" ? <DiscountCodesView discountCodes={discountCodes} onCreate={createDiscountCode} onUpdate={updateDiscountCode} onDelete={deleteDiscountCode} /> : null}
         {view === "blog" ? <AdminBlogView posts={blogPosts} email={email} password={password} onPostsChange={setBlogPosts} setMessage={setMessage} /> : null}
+        {view === "seguridad" ? <PasswordChangeView email={email} password={password} onPasswordChanged={setPassword} /> : null}
       </main>
     </div>
   );
@@ -314,12 +316,85 @@ function AdminLogin({ email, password, message, isLoading, onEmailChange, onPass
         </label>
         <label className="mt-4 block">
           <span className="text-sm text-slate-300">Clave de administración</span>
-          <input autoComplete="current-password" className="focus-ring mt-2 w-full rounded border border-datum-line bg-white px-4 py-3" onChange={(event) => onPasswordChange(event.target.value)} onKeyDown={(event) => event.key === "Enter" && onSubmit()} type="password" value={password} />
+          <PasswordInput autoComplete="current-password" onChange={onPasswordChange} onEnter={onSubmit} value={password} />
         </label>
         <button className="mt-4 w-full rounded bg-datum-cyan px-5 py-3 font-semibold text-datum-ink disabled:opacity-50" disabled={isLoading} onClick={onSubmit} type="button">{isLoading ? "Cargando..." : "Entrar"}</button>
         {message ? <p className="mt-4 text-sm text-red-200">{message}</p> : null}
       </section>
     </main>
+  );
+}
+
+function PasswordInput({ value, onChange, onEnter, autoComplete }: { value: string; onChange: (value: string) => void; onEnter?: () => void; autoComplete: "current-password" | "new-password" }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative mt-2">
+      <input autoComplete={autoComplete} className="focus-ring w-full rounded border border-datum-line bg-white py-3 pl-4 pr-12" onChange={(event) => onChange(event.target.value)} onKeyDown={(event) => event.key === "Enter" && onEnter?.()} type={visible ? "text" : "password"} value={value} />
+      <button aria-label={visible ? "Ocultar clave" : "Mostrar clave"} aria-pressed={visible} className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-500 hover:text-slate-900" onClick={() => setVisible((current) => !current)} type="button">
+        <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+          {visible ? (
+            <>
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+              <path d="m1 1 22 22" />
+            </>
+          ) : (
+            <>
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </>
+          )}
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+function PasswordChangeView({ email, password, onPasswordChanged }: { email: string; password: string; onPasswordChanged: (value: string) => void }) {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function submit() {
+    if (newPassword !== confirmation) {
+      setFeedback({ ok: false, text: "Las dos claves nuevas no coinciden." });
+      return;
+    }
+    setIsSaving(true);
+    setFeedback(null);
+    const response = await fetch("/api/admin/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-email": email, "x-admin-password": password },
+      body: JSON.stringify({ newPassword })
+    });
+    const payload = await response.json().catch(() => ({}));
+    setIsSaving(false);
+
+    if (!response.ok) {
+      setFeedback({ ok: false, text: payload.error ?? "No se pudo cambiar la clave." });
+      return;
+    }
+    onPasswordChanged(newPassword);
+    setNewPassword("");
+    setConfirmation("");
+    setFeedback({ ok: true, text: "Clave actualizada. Úsala en tu próximo acceso." });
+  }
+
+  return (
+    <section className="max-w-md rounded border border-datum-line bg-datum-panel p-6">
+      <h2 className="text-xl font-semibold">Cambiar clave de administración</h2>
+      <p className="mt-2 text-sm text-slate-400">Mínimo 12 caracteres. La clave nueva sustituye a la actual para todo el equipo con acceso al portal.</p>
+      <label className="mt-6 block">
+        <span className="text-sm text-slate-300">Nueva clave</span>
+        <PasswordInput autoComplete="new-password" onChange={setNewPassword} value={newPassword} />
+      </label>
+      <label className="mt-4 block">
+        <span className="text-sm text-slate-300">Repite la nueva clave</span>
+        <PasswordInput autoComplete="new-password" onChange={setConfirmation} onEnter={submit} value={confirmation} />
+      </label>
+      <button className="mt-5 w-full rounded bg-datum-cyan px-5 py-3 font-semibold text-datum-ink disabled:opacity-50" disabled={isSaving || !newPassword || !confirmation} onClick={submit} type="button">{isSaving ? "Guardando..." : "Guardar nueva clave"}</button>
+      {feedback ? <p className={`mt-4 text-sm ${feedback.ok ? "text-emerald-300" : "text-red-200"}`} role="status">{feedback.text}</p> : null}
+    </section>
   );
 }
 
