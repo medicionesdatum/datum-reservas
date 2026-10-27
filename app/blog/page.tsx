@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 export default async function BlogPage() {
   const posts = await getPublishedBlogPosts();
   const [featured, ...rest] = posts;
+  const featuredCover = blogCoverStyle(featured?.cover_image_url);
 
   return (
     <div className="min-h-screen bg-[#06111f] text-white">
@@ -52,11 +53,11 @@ export default async function BlogPage() {
               <article className="grid overflow-hidden border border-datum-line bg-[#091827] lg:grid-cols-[1.15fr_0.85fr]">
                 <Link
                   aria-label={`Leer ${featured.title}`}
-                  className="blog-cover blog-visual min-h-72 border-b border-datum-line lg:min-h-[470px] lg:border-b-0 lg:border-r"
+                  className={`blog-cover ${featuredCover ? "" : "blog-visual"} min-h-72 border-b border-datum-line lg:min-h-[470px] lg:border-b-0 lg:border-r`}
                   href={`/blog/${featured.slug}`}
-                  style={blogCoverStyle(featured.cover_image_url)}
+                  style={featuredCover}
                 >
-                  {!featured.cover_image_url ? <span className="blog-visual-mark">DATUM / INSIGHT</span> : null}
+                  {!featuredCover ? <span className="blog-visual-mark">DATUM / INSIGHT</span> : null}
                 </Link>
                 <div className="flex flex-col justify-center p-7 md:p-10 lg:p-12">
                   <BlogMeta post={featured} />
@@ -96,15 +97,16 @@ export default async function BlogPage() {
 }
 
 function BlogCard({ post }: { post: Awaited<ReturnType<typeof getPublishedBlogPosts>>[number] }) {
+  const cover = blogCoverStyle(post.cover_image_url);
   return (
     <article className="flex h-full flex-col border border-datum-line bg-[#091827]">
       <Link
         aria-label={`Leer ${post.title}`}
-        className="blog-cover blog-visual aspect-[16/9] border-b border-datum-line"
+        className={`blog-cover ${cover ? "" : "blog-visual"} aspect-[16/9] border-b border-datum-line`}
         href={`/blog/${post.slug}`}
-        style={blogCoverStyle(post.cover_image_url)}
+        style={cover}
       >
-        {!post.cover_image_url ? <span className="blog-visual-mark">DATUM / INSIGHT</span> : null}
+        {!cover ? <span className="blog-visual-mark">DATUM / INSIGHT</span> : null}
       </Link>
       <div className="flex flex-1 flex-col p-6">
         <BlogMeta post={post} />
