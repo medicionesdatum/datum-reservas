@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { isAdminAuthorized } from "@/lib/admin-auth";
+import { credentialMarkerForHash, getAdminIdentity, isCurrentAdminPassword } from "@/lib/admin-auth";
 import { hashAdminPassword, validateNewAdminPassword } from "@/lib/admin-password";
+import { adminSessionSetCookie, createAdminSessionToken } from "@/lib/admin-session";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function POST(request: Request) {
-  if (!(await isAdminAuthorized(request))) {
+  const email = await getAdminIdentity(request);
+  if (!email) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
@@ -22,10 +24,12 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => null);
-  const currentPassword = request.headers.get("x-admin-password") ?? "";
-  const validationError = validateNewAdminPassword(body?.newPassword, currentPassword);
+  const validationError = validateNewAdminPassword(body?.newPassword, "");
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
+  }
+  if (await isCurrentAdminPassword(body.newPassword)) {
+    return NextResponse.json({ error: "La nueva clave debe ser distinta de la actual." }, { status: 400 });
   }
 
   const supabase = getSupabaseAdmin();
@@ -33,9 +37,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "La base de datos no está configurada." }, { status: 503 });
   }
 
+  const passwordHash = await hashAdminPassword(body.newPassword);
   const { error } = await supabase.from("admin_credentials").upsert({
     id: 1,
-    password_hash: await hashAdminPassword(body.newPassword),
+    password_hash: passwordHash,
     updated_at: new Date().toISOString()
   });
 
@@ -46,5 +51,9 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ ok: true });
+  // Las sesiones abiertas con la clave anterior caducan; esta se renueva con la nueva.
+  const response = NextResponse.json({ ok: true });
+  const token = createAdminSessionToken(email, credentialMarkerForHash(passwordHash));
+  if (token) response.headers.append("Set-Cookie", adminSessionSetCookie(token));
+  return response;
 }
