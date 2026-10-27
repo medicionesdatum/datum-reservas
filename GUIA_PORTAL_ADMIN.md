@@ -100,6 +100,21 @@ Acciones disponibles:
 - Agregar o modificar notas internas.
 - Generar enlace de pago del saldo pendiente en Square.
 
+#### Modificacion / ajuste del saldo
+
+En la ficha de una reserva con el deposito pagado, el boton `Modificacion / ajuste` permite cobrar un importe distinto al saldo pendiente (mayor o menor, entre 0,01 y 50.000 EUR). Hay que escribir el importe y un motivo (5 a 200 caracteres).
+
+- La aplicacion crea un enlace de Square por ese importe y cierra el enlace de saldo anterior, si existia.
+- El importe original (`Saldo pendiente`) no se modifica; se muestra ademas `Saldo ajustado` con el motivo.
+- Al pagar, Square avisa por webhook, que solo acepta exactamente el importe ajustado, y la reserva pasa a pagada por completo.
+- Si hace falta ajustar de nuevo antes de que el cliente pague, repetir la operacion: el enlace anterior queda anulado.
+- Requisito previo, una sola vez: ejecutar `supabase/20261028_balance_adjustment.sql` en el SQL Editor de Supabase.
+- Cambiar el importe de un saldo ya cobrado no se hace aqui: se gestiona en Square como reembolso.
+
+#### 2o pago por transferencia
+
+El boton `2o pago transferencia` es solo informativo. Muestra el importe a transferir (el saldo, o el ajustado si lo hay) y una referencia corta de la reserva, con botones para copiarlos. No genera cobros ni cambia estados, y no guarda datos bancarios: Administracion envia esos datos directamente al cliente. Al recibir la transferencia, cambiar el estado de pago a `Pagado por completo`.
+
 ### Clientes
 
 Agrupa las reservas por email del cliente.
