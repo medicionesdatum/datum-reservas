@@ -7,7 +7,10 @@ import { ConfigurationError, getBookingMode } from "@/lib/runtime-config";
 import { createSquarePaymentLink, deleteSquarePaymentLink } from "@/lib/square";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
-/** Genera un enlace de Square por un importe de saldo ajustado (mayor o menor que el pendiente). */
+/**
+ * Crea un enlace de Square aparte por el importe real a cobrar (mayor o menor que
+ * el saldo pendiente). El enlace de saldo y `pending_balance` no se tocan.
+ */
 export async function POST(request: Request) {
   if (!(await isAdminAuthorized(request))) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -50,9 +53,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "El depósito debe estar confirmado antes de ajustar el saldo." }, { status: 409 });
     }
 
-    // Un enlace de saldo anterior cobraría otro importe y el webhook lo rechazaría: se cierra antes.
-    if (reservation.final_payment_link && reservation.final_square_reference) {
-      await deleteSquarePaymentLink(reservation.final_square_reference);
+    // Un ajuste anterior cobraría otro importe y el webhook lo rechazaría: se cierra antes.
+    if (reservation.adjustment_payment_link && reservation.adjustment_square_reference) {
+      await deleteSquarePaymentLink(reservation.adjustment_square_reference);
       previousLinkClosed = true;
     }
 
@@ -60,16 +63,16 @@ export async function POST(request: Request) {
       reservationId: id,
       description: "Saldo final ajustado DATUM Mediciones",
       amountInCents: adjustment.amountInCents,
-      kind: "final",
-      idempotencyKeySuffix: `-adj-${randomUUID()}`
+      kind: "adjustment",
+      idempotencyKeySuffix: `-${randomUUID()}`
     });
     newPaymentLinkId = payment.paymentLinkId;
 
     const update = {
       adjusted_balance: adjustment.amount,
       balance_adjustment_reason: adjustment.reason,
-      final_payment_link: payment.checkoutUrl,
-      final_square_reference: payment.paymentLinkId,
+      adjustment_payment_link: payment.checkoutUrl,
+      adjustment_square_reference: payment.paymentLinkId,
       operational_status: "pendiente_de_saldo"
     };
     const { error } = await supabase.from("reservations").update(update).eq("id", id);
@@ -81,10 +84,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (newPaymentLinkId) await deleteSquarePaymentLink(newPaymentLinkId).catch(() => null);
     if (previousLinkClosed && reservationId) {
-      // El enlace anterior ya no existe en Square: se limpia para que el panel no ofrezca uno muerto.
+      // El ajuste anterior ya no existe en Square: se limpia para que el panel no ofrezca un enlace muerto.
       await getSupabaseAdmin()
         ?.from("reservations")
-        .update({ final_payment_link: null, final_square_reference: null })
+        .update({ adjusted_balance: null, balance_adjustment_reason: null, adjustment_payment_link: null, adjustment_square_reference: null })
         .eq("id", reservationId);
     }
     return NextResponse.json(

@@ -3,16 +3,23 @@ export const MAX_ADJUSTED_BALANCE = 50000;
 export const MIN_ADJUSTMENT_REASON_LENGTH = 5;
 export const MAX_ADJUSTMENT_REASON_LENGTH = 200;
 
-type BalanceFields = {
+type PaymentAmountFields = {
+  deposit: number | string;
   pending_balance: number | string;
   adjusted_balance?: number | string | null;
 };
 
-/** Importe que debe cobrar el saldo final: el ajustado si existe y, si no, el pendiente. */
-export function expectedFinalBalance(reservation: BalanceFields) {
+/**
+ * Importe que debe cobrar cada tipo de pago. El enlace de saldo ("final") cobra
+ * siempre el saldo pendiente; el ajuste cobra el importe real escrito por el
+ * administrador, mayor o menor, sin modificar el saldo pendiente.
+ */
+export function expectedPaymentAmount(kind: "deposit" | "final" | "adjustment", reservation: PaymentAmountFields) {
+  if (kind === "deposit") return Number(reservation.deposit);
+  if (kind === "final") return Number(reservation.pending_balance);
+
   const adjusted = reservation.adjusted_balance;
-  if (adjusted !== null && adjusted !== undefined && adjusted !== "") return Number(adjusted);
-  return Number(reservation.pending_balance);
+  return adjusted === null || adjusted === undefined || adjusted === "" ? Number.NaN : Number(adjusted);
 }
 
 /** Valida el ajuste enviado desde el panel. El importe puede ser mayor o menor que el saldo pendiente. */

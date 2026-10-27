@@ -104,13 +104,15 @@ Acciones disponibles:
 
 #### Modificacion / ajuste del saldo
 
-En la ficha de una reserva con el deposito pagado, el boton `Modificacion / ajuste` permite cobrar un importe distinto al saldo pendiente (mayor o menor, entre 0,01 y 50.000 EUR). Hay que escribir el importe y un motivo (5 a 200 caracteres).
+El enlace del saldo (`Generar saldo en Square` / `Abrir enlace del saldo`) cobra siempre el `Saldo pendiente`. Cuando hay que cobrar otro importe, mayor o menor, se usa el boton `Modificacion / ajuste` en la ficha de una reserva con el deposito pagado.
 
-- La aplicacion crea un enlace de Square por ese importe y cierra el enlace de saldo anterior, si existia.
-- El importe original (`Saldo pendiente`) no se modifica; se muestra ademas `Saldo ajustado` con el motivo.
-- Al pagar, Square avisa por webhook, que solo acepta exactamente el importe ajustado, y la reserva pasa a pagada por completo.
-- Si hace falta ajustar de nuevo antes de que el cliente pague, repetir la operacion: el enlace anterior queda anulado.
-- Requisito previo, una sola vez: ejecutar `supabase/20261028_balance_adjustment.sql` en el SQL Editor de Supabase.
+- Hay que escribir el importe real a cobrar (entre 0,01 y 50.000 EUR) y un motivo (5 a 200 caracteres).
+- La aplicacion crea un enlace de Square aparte por ese importe y lo abre en una pestana nueva. Tambien queda disponible en `Abrir enlace del ajuste`.
+- El enlace del saldo y el `Saldo pendiente` no se modifican; la ficha muestra ademas `Importe ajustado a cobrar` con el motivo.
+- Si se repite el ajuste antes de que el cliente pague, el enlace de ajuste anterior queda anulado.
+- Saldo y ajuste son dos formas de pagar lo mismo: cuando se cobra uno, la aplicacion cierra el otro enlace para evitar un doble cobro.
+- Al pagar, Square avisa por webhook, que solo acepta exactamente el importe de ese enlace, y la reserva pasa a pagada por completo.
+- Requisito previo, una sola vez: ejecutar en el SQL Editor de Supabase `supabase/20261028_balance_adjustment.sql` y despues `supabase/20261029_adjustment_payment_link.sql`.
 - Cambiar el importe de un saldo ya cobrado no se hace aqui: se gestiona en Square como reembolso.
 
 #### 2o pago por transferencia

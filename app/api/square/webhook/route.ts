@@ -1,6 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
-import { expectedFinalBalance } from "@/lib/balance-adjustment";
+import { expectedPaymentAmount } from "@/lib/balance-adjustment";
 import { normalizeDiscountCode } from "@/lib/discount-codes";
 import { sendReservationEmailBatch } from "@/lib/email";
 import {
@@ -11,7 +11,7 @@ import {
 } from "@/lib/reservation-emails";
 import { getAppUrl, isDemoModeEnabled } from "@/lib/runtime-config";
 import { syncReservationToNotionSafely } from "@/lib/notion";
-import { configuredSquareLocationId, parseSquarePaymentNote } from "@/lib/square";
+import { configuredSquareLocationId, deleteSquarePaymentLink, parseSquarePaymentNote } from "@/lib/square";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 async function verifySquareSignature(request: Request, body: string) {
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
   const { kind, reservationId } = reference;
   const supabase = getSupabaseAdmin();
 
-  if (!['deposit', 'final'].includes(kind)) {
+  if (!['deposit', 'final', 'adjustment'].includes(kind)) {
     return NextResponse.json({ received: true, ignored: "unknown_payment_kind" });
   }
 
@@ -101,9 +101,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Reservation not found" }, { status: 404 });
   }
 
-  const expectedAmount = Math.round(
-    (kind === "deposit" ? Number(reservation.deposit) : expectedFinalBalance(reservation)) * 100
-  );
+  const expectedAmount = Math.round(expectedPaymentAmount(kind, reservation) * 100);
   if (payment?.amount_money?.currency !== "EUR" || Number(payment?.amount_money?.amount) !== expectedAmount) {
     return NextResponse.json({ error: "Payment amount mismatch" }, { status: 409 });
   }
@@ -139,7 +137,9 @@ export async function POST(request: Request) {
       : {
           payment_status: "pagado_completo",
           operational_status: "pagado_completo",
-          final_square_reference: payment.id
+          ...(kind === "adjustment"
+            ? { adjustment_square_reference: payment.id }
+            : { final_square_reference: payment.id })
         };
 
   const { error } = await supabase
@@ -154,6 +154,19 @@ export async function POST(request: Request) {
 
   const updatedReservation = { ...reservation, ...update };
   after(() => syncReservationToNotionSafely(updatedReservation, `square_${kind}`));
+
+  // El saldo y el ajuste son dos formas de pagar lo mismo: al cobrarse una, se cierra la otra para evitar un doble cobro.
+  const otherLinkId =
+    kind === "final" && reservation.adjustment_payment_link
+      ? reservation.adjustment_square_reference
+      : kind === "adjustment" && reservation.final_payment_link
+        ? reservation.final_square_reference
+        : null;
+  if (typeof otherLinkId === "string" && otherLinkId) {
+    after(() => deleteSquarePaymentLink(otherLinkId).catch((closeError) => {
+      console.error("No se pudo cerrar el enlace de pago alternativo", { reservationId, message: closeError instanceof Error ? closeError.message : "unknown" });
+    }));
+  }
 
   if (kind === "deposit") {
     if (!wasAlreadyPaid && reservation.coupon_code) {
