@@ -60,6 +60,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     mainEntityOfPage: absoluteUrl(`/blog/${post.slug}`),
     inLanguage: "es-ES"
   };
+  const cover = blogCoverStyle(post.cover_image_url);
 
   return (
     <div className="min-h-screen bg-[#06111f] text-white">
@@ -86,11 +87,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <div className="mx-auto max-w-6xl px-5 pt-10 md:px-8 md:pt-14">
             <div
               aria-label={`Portada de ${post.title}`}
-              className="blog-cover blog-visual aspect-[16/7] border border-datum-line"
+              className={`blog-cover ${cover ? "" : "blog-visual"} aspect-[16/7] border border-datum-line`}
               role="img"
-              style={blogCoverStyle(post.cover_image_url)}
+              style={cover}
             >
-              {!post.cover_image_url ? <span className="blog-visual-mark">DATUM / {post.category}</span> : null}
+              {!cover ? <span className="blog-visual-mark">DATUM / {post.category}</span> : null}
             </div>
           </div>
 
