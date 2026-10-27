@@ -1,7 +1,7 @@
 import { normalizePhoneNumber } from "@/lib/phone";
 import { ConfigurationError, getAppUrl, isDemoModeEnabled } from "@/lib/runtime-config";
 
-type PaymentKind = "deposit" | "final";
+type PaymentKind = "deposit" | "final" | "adjustment";
 
 function squareSettings() {
   const token = process.env.SQUARE_ACCESS_TOKEN?.trim().replace(/^Bearer\s+/i, "");
@@ -30,7 +30,7 @@ export function squarePaymentNote(kind: PaymentKind, reservationId: string) {
 
 export function parseSquarePaymentNote(value: unknown) {
   if (typeof value !== "string") return null;
-  const match = value.match(/^datum:(deposit|final):([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i);
+  const match = value.match(/^datum:(deposit|final|adjustment):([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i);
   return match ? { kind: match[1] as PaymentKind, reservationId: match[2].toLowerCase() } : null;
 }
 

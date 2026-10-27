@@ -3,7 +3,6 @@ import { ConfigurationError, getBookingMode } from "@/lib/runtime-config";
 import { createSquarePaymentLink, deleteSquarePaymentLink } from "@/lib/square";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminAuthorized } from "@/lib/admin-auth";
-import { expectedFinalBalance } from "@/lib/balance-adjustment";
 import { syncReservationToNotionSafely } from "@/lib/notion";
 
 export async function POST(request: Request) {
@@ -42,8 +41,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ checkoutUrl: reservation.final_payment_link, reused: true });
     }
 
-    // Respeta un ajuste previo: el webhook espera este mismo importe.
-    const pendingBalance = expectedFinalBalance(reservation);
+    // El enlace de saldo cobra siempre el saldo pendiente; los importes distintos van por el ajuste.
+    const pendingBalance = Number(reservation.pending_balance);
     const amountInCents = Math.round(pendingBalance * 100);
     if (!Number.isFinite(pendingBalance) || amountInCents < 1) {
       return NextResponse.json({ error: "El saldo pendiente no es válido." }, { status: 409 });

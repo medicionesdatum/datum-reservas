@@ -16,6 +16,12 @@ describe("Square payment references", () => {
     expect(parseSquarePaymentNote(note)).toEqual({ kind: "deposit", reservationId });
   });
 
+  it("round-trips the adjustment payment note", () => {
+    const note = squarePaymentNote("adjustment", reservationId);
+    expect(note).toBe(`datum:adjustment:${reservationId}`);
+    expect(parseSquarePaymentNote(note)).toEqual({ kind: "adjustment", reservationId });
+  });
+
   it("rejects malformed or foreign notes", () => {
     expect(parseSquarePaymentNote(`other:deposit:${reservationId}`)).toBeNull();
     expect(parseSquarePaymentNote("datum:deposit:not-a-uuid")).toBeNull();
