@@ -61,7 +61,7 @@ export function blogCoverStyle(url?: string | null) {
     if (!["http:", "https:"].includes(parsed.protocol)) return undefined;
     return {
       backgroundImage: `linear-gradient(180deg, rgba(3, 12, 24, 0.05), rgba(3, 12, 24, 0.5)), url(${JSON.stringify(parsed.toString())})`,
-      backgroundSize: "cover",
+      backgroundSize: "contain",
       backgroundRepeat: "no-repeat",
       backgroundPosition: "center"
     };

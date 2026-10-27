@@ -87,7 +87,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <div className="mx-auto max-w-6xl px-5 pt-10 md:px-8 md:pt-14">
             <div
               aria-label={`Portada de ${post.title}`}
-              className={`blog-cover ${cover ? "" : "blog-visual"} aspect-[16/7] border border-datum-line`}
+              className={`blog-cover ${cover ? "" : "blog-visual"} aspect-[16/9] border border-datum-line`}
               role="img"
               style={cover}
             >
