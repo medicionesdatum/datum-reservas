@@ -110,6 +110,7 @@ El enlace del saldo (`Generar saldo en Square` / `Abrir enlace del saldo`) cobra
 - La aplicacion crea un enlace de Square aparte por ese importe y lo abre en una pestana nueva. Tambien queda disponible en `Abrir enlace del ajuste`.
 - El enlace del saldo y el `Saldo pendiente` no se modifican; la ficha muestra ademas `Importe ajustado a cobrar` con el motivo.
 - Si se repite el ajuste antes de que el cliente pague, el enlace de ajuste anterior queda anulado.
+- `Borrar ajuste` (visible mientras haya un ajuste y la reserva no este pagada por completo) cierra el enlace del ajuste en Square, elimina el importe ajustado y el cobro vuelve al `Saldo pendiente`.
 - Saldo y ajuste son dos formas de pagar lo mismo: cuando se cobra uno, la aplicacion cierra el otro enlace para evitar un doble cobro.
 - Al pagar, Square avisa por webhook, que solo acepta exactamente el importe de ese enlace, y la reserva pasa a pagada por completo.
 - Requisito previo, una sola vez: ejecutar en el SQL Editor de Supabase `supabase/20261028_balance_adjustment.sql` y despues `supabase/20261029_adjustment_payment_link.sql`.

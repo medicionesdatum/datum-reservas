@@ -659,6 +659,16 @@ function ReservationsView({ reservations, selectedId, onSelect, onUpdate, email,
     }
   }
 
+  async function clearAdjustment() {
+    if (!selected) return;
+    if (!window.confirm(`¿Borrar el ajuste de ${selected.customer_name}? Se cerrará su enlace de Square y el cobro volverá al saldo pendiente (${formatCurrency(Number(selected.pending_balance))}).`)) return;
+    const response = await fetch("/api/admin/balance-adjustment", { method: "DELETE", headers: { "Content-Type": "application/json", "x-admin-email": email, "x-admin-password": password }, body: JSON.stringify({ id: selected.id }) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) return setMessage(payload.error ?? "No se pudo borrar el ajuste.");
+    await onUpdate({ adjusted_balance: null, balance_adjustment_reason: null, adjustment_payment_link: null, ...(payload.clearedFinalLink ? { final_payment_link: undefined } : {}) });
+    setMessage(`Ajuste borrado. El cobro vuelve al saldo pendiente (${formatCurrency(Number(selected.pending_balance))}).`);
+  }
+
   async function adjustBalance(amount: number, reason: string) {
     if (!selected) return false;
     // Se abre al pulsar para que el navegador no bloquee la pestaña; después se redirige al enlace del ajuste.
@@ -699,7 +709,7 @@ function ReservationsView({ reservations, selectedId, onSelect, onUpdate, email,
         </div>
       </aside>
       <section className="min-w-0 border-t border-datum-line pt-6 xl:border-l xl:border-t-0 xl:pl-7 xl:pt-0">
-        {selected ? <ReservationDetail key={selected.id} reservation={selected} onUpdate={onUpdate} onFinalPayment={generateFinalPayment} onBalanceAdjustment={adjustBalance} /> : <Empty text="Selecciona una reserva para ver sus detalles." />}
+        {selected ? <ReservationDetail key={selected.id} reservation={selected} onUpdate={onUpdate} onFinalPayment={generateFinalPayment} onBalanceAdjustment={adjustBalance} onClearAdjustment={clearAdjustment} /> : <Empty text="Selecciona una reserva para ver sus detalles." />}
       </section>
     </div>
   );
@@ -761,7 +771,7 @@ function TransferInfoPanel({ amount, reference, onClose }: { amount: number; ref
   );
 }
 
-function ReservationDetail({ reservation, onUpdate, onFinalPayment, onBalanceAdjustment }: { reservation: ReservationRow; onUpdate: (update: Partial<ReservationRow>) => void; onFinalPayment: () => void; onBalanceAdjustment: (amount: number, reason: string) => Promise<boolean> }) {
+function ReservationDetail({ reservation, onUpdate, onFinalPayment, onBalanceAdjustment, onClearAdjustment }: { reservation: ReservationRow; onUpdate: (update: Partial<ReservationRow>) => void; onFinalPayment: () => void; onBalanceAdjustment: (amount: number, reason: string) => Promise<boolean>; onClearAdjustment: () => void }) {
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const pendingBalance = Number(reservation.pending_balance);
@@ -770,7 +780,7 @@ function ReservationDetail({ reservation, onUpdate, onFinalPayment, onBalanceAdj
   const additionalCount = reservation.additional_plans + reservation.additional_sections + reservation.additional_elevations;
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs text-datum-cyan">{reservation.id}</p><h2 className="mt-2 text-2xl font-semibold">{reservation.customer_name}</h2><p className="mt-2 text-sm text-slate-400">{reservation.email} · {reservation.phone}</p></div><div className="flex flex-wrap gap-3">{reservation.payment_status !== "pagado_completo" ? <button className="rounded border border-datum-line px-4 py-3 text-sm font-semibold text-slate-200" onClick={() => { setShowTransfer((current) => !current); setIsAdjusting(false); }} type="button">2º pago transferencia</button> : null}{reservation.payment_status !== "pagado_completo" ? <button className="rounded border border-datum-cyan px-4 py-3 text-sm font-semibold text-datum-cyan" onClick={() => { setIsAdjusting((current) => !current); setShowTransfer(false); }} type="button">Modificación / ajuste</button> : null}<button className="rounded bg-datum-cyan px-4 py-3 text-sm font-semibold text-datum-ink" onClick={onFinalPayment} type="button">Generar saldo en Square</button></div></div>
+      <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs text-datum-cyan">{reservation.id}</p><h2 className="mt-2 text-2xl font-semibold">{reservation.customer_name}</h2><p className="mt-2 text-sm text-slate-400">{reservation.email} · {reservation.phone}</p></div><div className="flex flex-wrap gap-3">{reservation.payment_status !== "pagado_completo" ? <button className="rounded border border-datum-line px-4 py-3 text-sm font-semibold text-slate-200" onClick={() => { setShowTransfer((current) => !current); setIsAdjusting(false); }} type="button">2º pago transferencia</button> : null}{reservation.payment_status !== "pagado_completo" ? <button className="rounded border border-datum-cyan px-4 py-3 text-sm font-semibold text-datum-cyan" onClick={() => { setIsAdjusting((current) => !current); setShowTransfer(false); }} type="button">Modificación / ajuste</button> : null}{reservation.payment_status !== "pagado_completo" && (reservation.adjusted_balance != null || reservation.adjustment_payment_link) ? <button className="rounded border border-red-300/50 px-4 py-3 text-sm font-semibold text-red-200" onClick={onClearAdjustment} type="button">Borrar ajuste</button> : null}<button className="rounded bg-datum-cyan px-4 py-3 text-sm font-semibold text-datum-ink" onClick={onFinalPayment} type="button">Generar saldo en Square</button></div></div>
       {showTransfer ? <TransferInfoPanel amount={amountToCollect} onClose={() => setShowTransfer(false)} reference={reservation.id.slice(0, 8).toUpperCase()} /> : null}
       {isAdjusting ? <BalanceAdjustmentForm pendingBalance={pendingBalance} onCancel={() => setIsAdjusting(false)} onSubmit={onBalanceAdjustment} /> : null}
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

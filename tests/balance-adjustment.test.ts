@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { expectedPaymentAmount, validateBalanceAdjustment } from "@/lib/balance-adjustment";
+import { adjustmentCleanupPlan, expectedPaymentAmount, validateBalanceAdjustment } from "@/lib/balance-adjustment";
 
 describe("expectedPaymentAmount", () => {
   const reservation = { deposit: 121, pending_balance: 121, adjusted_balance: 180.5 };
@@ -51,5 +51,33 @@ describe("validateBalanceAdjustment", () => {
 
   it("admite el tope máximo", () => {
     expect(validateBalanceAdjustment({ amount: 50000, reason: "Trabajo especial" })).toMatchObject({ amountInCents: 5000000 });
+  });
+});
+
+describe("adjustmentCleanupPlan", () => {
+  it("cierra el enlace propio del ajuste y deja intacto el de saldo", () => {
+    expect(adjustmentCleanupPlan({
+      adjusted_balance: 15,
+      adjustment_payment_link: "https://square.link/ajuste",
+      adjustment_square_reference: "LINK_AJUSTE",
+      final_payment_link: "https://square.link/saldo",
+      final_square_reference: "LINK_SALDO"
+    })).toEqual({ hasAdjustment: true, legacyFinalLink: false, squareLinkIds: ["LINK_AJUSTE"] });
+  });
+
+  it("en ajustes antiguos cierra también el enlace de saldo, que era el del ajuste", () => {
+    expect(adjustmentCleanupPlan({
+      adjusted_balance: 15,
+      final_payment_link: "https://square.link/viejo",
+      final_square_reference: "LINK_VIEJO"
+    })).toEqual({ hasAdjustment: true, legacyFinalLink: true, squareLinkIds: ["LINK_VIEJO"] });
+  });
+
+  it("sin ajuste no hay nada que borrar ni cerrar", () => {
+    expect(adjustmentCleanupPlan({
+      adjusted_balance: null,
+      final_payment_link: "https://square.link/saldo",
+      final_square_reference: "LINK_SALDO"
+    })).toEqual({ hasAdjustment: false, legacyFinalLink: false, squareLinkIds: [] });
   });
 });

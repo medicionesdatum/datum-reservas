@@ -49,3 +49,27 @@ export function validateBalanceAdjustment(input: { amount: unknown; reason: unkn
 
   return { amount: amountInCents / 100, amountInCents, reason } as const;
 }
+
+type AdjustmentFields = {
+  adjusted_balance?: number | string | null;
+  adjustment_payment_link?: string | null;
+  adjustment_square_reference?: string | null;
+  final_payment_link?: string | null;
+  final_square_reference?: string | null;
+};
+
+/**
+ * Qué hay que cerrar y limpiar al borrar un ajuste. Los ajustes guardados antes de
+ * existir el enlace propio dejaron el enlace del ajuste en `final_payment_link`
+ * (legado): también se cierra para que el enlace de saldo vuelva a cobrar el saldo pendiente.
+ */
+export function adjustmentCleanupPlan(reservation: AdjustmentFields) {
+  const hasAdjustment = reservation.adjusted_balance != null || Boolean(reservation.adjustment_payment_link);
+  const legacyFinalLink = hasAdjustment && !reservation.adjustment_payment_link && Boolean(reservation.final_payment_link);
+  const squareLinkIds = [
+    reservation.adjustment_payment_link ? reservation.adjustment_square_reference : null,
+    legacyFinalLink ? reservation.final_square_reference : null
+  ].filter((linkId): linkId is string => typeof linkId === "string" && linkId.length > 0);
+
+  return { hasAdjustment, legacyFinalLink, squareLinkIds };
+}

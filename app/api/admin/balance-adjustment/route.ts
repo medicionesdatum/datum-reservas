@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { after, NextResponse } from "next/server";
 import { isAdminAuthorized } from "@/lib/admin-auth";
-import { validateBalanceAdjustment } from "@/lib/balance-adjustment";
+import { adjustmentCleanupPlan, validateBalanceAdjustment } from "@/lib/balance-adjustment";
 import { syncReservationToNotionSafely } from "@/lib/notion";
 import { ConfigurationError, getBookingMode } from "@/lib/runtime-config";
 import { createSquarePaymentLink, deleteSquarePaymentLink } from "@/lib/square";
@@ -92,6 +92,65 @@ export async function POST(request: Request) {
     }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "No se pudo generar el ajuste." },
+      { status: error instanceof ConfigurationError ? 503 : 500 }
+    );
+  }
+}
+
+/**
+ * Borra el ajuste de una reserva: cierra su enlace de Square y vuelve al saldo pendiente.
+ * Reservas con el ajuste guardado antes de existir el enlace propio tienen el enlace de
+ * ajuste en `final_payment_link`: también se cierra y se limpia para que «Generar saldo»
+ * vuelva a cobrar el saldo pendiente.
+ */
+export async function DELETE(request: Request) {
+  if (!(await isAdminAuthorized(request))) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json().catch(() => null);
+    const id = body?.id;
+    if (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) {
+      return NextResponse.json({ error: "Falta una reserva válida." }, { status: 400 });
+    }
+
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new ConfigurationError("No se puede acceder a la base de datos.");
+    const { data: reservation, error: reservationError } = await supabase
+      .from("reservations")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (reservationError || !reservation) {
+      return NextResponse.json({ error: "Reserva no encontrada." }, { status: 404 });
+    }
+    if (reservation.payment_status === "pagado_completo") {
+      return NextResponse.json({ error: "Esta reserva ya está pagada por completo; el ajuste no se puede borrar." }, { status: 409 });
+    }
+
+    const { hasAdjustment, legacyFinalLink, squareLinkIds } = adjustmentCleanupPlan(reservation);
+    if (!hasAdjustment) {
+      return NextResponse.json({ error: "Esta reserva no tiene ningún ajuste." }, { status: 409 });
+    }
+    for (const linkId of squareLinkIds) await deleteSquarePaymentLink(linkId);
+
+    const update = {
+      adjusted_balance: null,
+      balance_adjustment_reason: null,
+      adjustment_payment_link: null,
+      adjustment_square_reference: null,
+      ...(legacyFinalLink ? { final_payment_link: null, final_square_reference: null } : {})
+    };
+    const { error } = await supabase.from("reservations").update(update).eq("id", id);
+    if (error) throw error;
+
+    after(() => syncReservationToNotionSafely({ ...reservation, ...update }, "admin_balance_adjustment_cleared"));
+
+    return NextResponse.json({ ok: true, clearedFinalLink: legacyFinalLink });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "No se pudo borrar el ajuste." },
       { status: error instanceof ConfigurationError ? 503 : 500 }
     );
   }
