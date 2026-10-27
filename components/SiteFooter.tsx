@@ -30,6 +30,18 @@ export function SiteFooter() {
             >
               ig
             </SocialLink>
+            <SocialLink
+              href="https://www.tiktok.com/@datum.mediciones"
+              label="TikTok"
+            >
+              tt
+            </SocialLink>
+            <SocialLink
+              href="https://www.youtube.com/@datum.mediciones"
+              label="YouTube"
+            >
+              yt
+            </SocialLink>
           </div>
         </div>
 
