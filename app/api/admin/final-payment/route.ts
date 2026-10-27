@@ -1,6 +1,7 @@
+import { randomUUID } from "node:crypto";
 import { after, NextResponse } from "next/server";
 import { ConfigurationError, getBookingMode } from "@/lib/runtime-config";
-import { createSquarePaymentLink, deleteSquarePaymentLink } from "@/lib/square";
+import { createSquarePaymentLink, deleteSquarePaymentLink, squarePaymentLinkIsActive } from "@/lib/square";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminAuthorized } from "@/lib/admin-auth";
 import { syncReservationToNotionSafely } from "@/lib/notion";
@@ -37,7 +38,11 @@ export async function POST(request: Request) {
     if (reservation.payment_status !== "deposito_pagado") {
       return NextResponse.json({ error: "El depósito debe estar confirmado antes de generar el saldo." }, { status: 409 });
     }
-    if (reservation.final_payment_link) {
+    // Solo se reutiliza el enlace guardado si sigue abierto en Square; uno cerrado muestra «página no encontrada».
+    const existingLinkIsActive = reservation.final_payment_link
+      ? !reservation.final_square_reference || (await squarePaymentLinkIsActive(reservation.final_square_reference))
+      : false;
+    if (existingLinkIsActive) {
       return NextResponse.json({ checkoutUrl: reservation.final_payment_link, reused: true });
     }
 
@@ -52,7 +57,9 @@ export async function POST(request: Request) {
       reservationId: id,
       description: "Saldo final DATUM Mediciones",
       amountInCents,
-      kind: "final"
+      kind: "final",
+      // Square devuelve el enlace original (aunque esté cerrado) si se repite la misma clave de idempotencia.
+      idempotencyKeySuffix: `-${randomUUID()}`
     });
     paymentLinkId = payment.paymentLinkId;
 

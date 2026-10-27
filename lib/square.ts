@@ -187,6 +187,26 @@ export async function deleteSquarePaymentLink(paymentLinkId: string) {
   throw new Error(`No se pudo cerrar el enlace de pago caducado${context ? ` (${context})` : ""}.`);
 }
 
+/**
+ * true si el enlace sigue abierto en Square; false si ya no existe (cerrado o caducado).
+ * Un enlace cerrado devuelve 404 en Square y su página de pago muestra «página no encontrada».
+ */
+export async function squarePaymentLinkIsActive(paymentLinkId: string) {
+  if (paymentLinkId.startsWith("demo-")) return true;
+  const { token, host } = squareSettings();
+  const response = await fetch(`${host}/v2/online-checkout/payment-links/${encodeURIComponent(paymentLinkId)}`, {
+    headers: {
+      "Content-Type": "application/json",
+      "Square-Version": "2026-05-20",
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (response.status === 404) return false;
+  if (response.ok) return true;
+  throw new Error("No se pudo comprobar el enlace de pago en Square.");
+}
+
 export function configuredSquareLocationId() {
   return squareSettings().locationId;
 }

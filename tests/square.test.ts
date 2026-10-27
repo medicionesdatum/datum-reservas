@@ -3,6 +3,7 @@ import { normalizePhoneNumber } from "@/lib/phone";
 import {
   createSquarePaymentLink,
   deleteSquarePaymentLink,
+  squarePaymentLinkIsActive,
   parseSquarePaymentNote,
   squarePaymentNote
 } from "@/lib/square";
@@ -60,6 +61,37 @@ describe("Square integration behavior", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "DELETE" });
     expect(fetchMock.mock.calls[1][1]).not.toHaveProperty("method");
+  });
+
+  it("reports whether a payment link is still open in Square", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ payment_link: { id: "l1" } }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ errors: [{ code: "NOT_FOUND" }] }), { status: 404 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ errors: [{ code: "SERVICE_UNAVAILABLE" }] }), { status: 503 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(squarePaymentLinkIsActive("l1")).resolves.toBe(true);
+    await expect(squarePaymentLinkIsActive("l2")).resolves.toBe(false);
+    await expect(squarePaymentLinkIsActive("l3")).rejects.toThrow("No se pudo comprobar");
+    expect(fetchMock.mock.calls[0][1]).not.toHaveProperty("method");
+
+    fetchMock.mockClear();
+    await expect(squarePaymentLinkIsActive("demo-final-1")).resolves.toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("uses a different idempotency key when a suffix is given", async () => {
+    const fetchMock = vi.fn().mockImplementation(async () =>
+      new Response(JSON.stringify({ payment_link: { id: "link_new", url: "https://square.link/u/new" } }), { status: 200 })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await createSquarePaymentLink({ reservationId, description: "Saldo", amountInCents: 12100, kind: "final" });
+    await createSquarePaymentLink({ reservationId, description: "Saldo", amountInCents: 12100, kind: "final", idempotencyKeySuffix: "-abc" });
+
+    const keys = fetchMock.mock.calls.map((call) => JSON.parse(call[1].body).idempotency_key);
+    expect(keys).toEqual([`final-${reservationId}`, `final-${reservationId}-abc`]);
   });
 
   it("keeps a pending reservation when the Square link is still active", async () => {
