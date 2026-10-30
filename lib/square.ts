@@ -108,7 +108,7 @@ export async function createSquarePaymentLink(params: {
           location_id: locationId
         },
         checkout_options: {
-          redirect_url: `${appUrl}/confirmacion?reserva=${params.reservationId}`
+          redirect_url: `${appUrl}/confirmacion?reserva=${params.reservationId}${params.kind === "deposit" ? "" : "&pago=saldo"}`
         },
         ...(Object.keys(prePopulatedData).length ? { pre_populated_data: prePopulatedData } : {}),
         payment_note: squarePaymentNote(params.kind, params.reservationId)

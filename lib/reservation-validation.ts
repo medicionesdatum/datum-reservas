@@ -48,7 +48,8 @@ export function parseReservationInput(value: unknown, now = Date.now()):
   const fullAddress = text(input.fullAddress, 300);
   const street = text(input.street, 120);
   const postalCode = text(input.postalCode, 10);
-  const requiresInvoice = input.requiresInvoice === true;
+  // Los datos de facturación son obligatorios en todas las reservas.
+  const requiresInvoice = true;
   const billingName = text(input.billingName, 160);
   const billingTaxId = text(input.billingTaxId, 20).toUpperCase();
   const billingAddress = text(input.billingAddress, 300);

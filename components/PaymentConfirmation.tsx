@@ -3,8 +3,18 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export default function PaymentConfirmation({ reservationId, isDemo }: { reservationId: string; isDemo: boolean }) {
-  const [status, setStatus] = useState<"checking" | "confirmed" | "pending" | "expired" | "error">(isDemo ? "confirmed" : "checking");
+export default function PaymentConfirmation({
+  reservationId,
+  isDemo,
+  isBalancePayment = false
+}: {
+  reservationId: string;
+  isDemo: boolean;
+  isBalancePayment?: boolean;
+}) {
+  const [status, setStatus] = useState<"checking" | "confirmed" | "balance_paid" | "pending" | "expired" | "error">(
+    isDemo ? (isBalancePayment ? "balance_paid" : "confirmed") : "checking"
+  );
 
   useEffect(() => {
     if (isDemo || !reservationId) return;
@@ -17,7 +27,12 @@ export default function PaymentConfirmation({ reservationId, isDemo }: { reserva
         const response = await fetch(`/api/reservations/status?id=${reservationId}`, { cache: "no-store" });
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error);
-        if (["deposito_pagado", "pagado_completo"].includes(payload.paymentStatus)) {
+        if (payload.paymentStatus === "pagado_completo") {
+          setStatus("balance_paid");
+          return;
+        }
+        // Tras pagar el saldo, "deposito_pagado" es solo el estado previo al aviso de Square: se sigue esperando.
+        if (payload.paymentStatus === "deposito_pagado" && !isBalancePayment) {
           setStatus("confirmed");
           return;
         }
@@ -37,20 +52,23 @@ export default function PaymentConfirmation({ reservationId, isDemo }: { reserva
 
     checkPayment();
     return () => clearTimeout(timer);
-  }, [isDemo, reservationId]);
+  }, [isDemo, isBalancePayment, reservationId]);
 
   const confirmed = status === "confirmed";
+  const balancePaid = status === "balance_paid";
   return (
     <main className="min-h-screen px-5 py-10">
       <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-center">
         <p className="text-sm uppercase tracking-[0.22em] text-datum-cyan">
-          {confirmed ? "Reserva recibida" : "Verificando el pago"}
+          {balancePaid ? "Segundo pago recibido" : confirmed ? "Reserva recibida" : "Verificando el pago"}
         </p>
         <h1 className="mt-4 text-4xl font-semibold text-white md:text-6xl">
-          {confirmed ? "Tu reserva ha sido confirmada." : "Estamos comprobando tu pago."}
+          {balancePaid ? "Saldo pendiente liquidado." : confirmed ? "Tu reserva ha sido confirmada." : "Estamos comprobando tu pago."}
         </h1>
         <p className="mt-6 text-lg leading-8 text-slate-200">
-          {confirmed
+          {balancePaid
+            ? "Hemos recibido tu segundo pago y tu reserva queda pagada por completo. Gracias por confiar en DATUM."
+            : confirmed
             ? "Hemos recibido tu depósito. El equipo de DATUM se pondrá en contacto contigo para coordinar la medición."
             : status === "pending"
               ? "El pago todavía está pendiente de confirmación. Conserva esta referencia y revisaremos la operación."

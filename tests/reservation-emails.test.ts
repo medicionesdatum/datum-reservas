@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   adminPendingReservationEmail,
   customerReservationConfirmedEmail,
+  customerSecondPaymentEmail,
   notificationEmails
 } from "@/lib/reservation-emails";
 
@@ -104,5 +105,17 @@ describe("reservation email content", () => {
       "info@medicionesdatum.es",
       "d.escobar@medicionesdatum.es"
     ]);
+  });
+});
+
+describe("second payment email", () => {
+  it("confirms the balance is settled and escapes customer data", () => {
+    const html = customerSecondPaymentEmail(reservation, 121);
+
+    expect(html).toContain("Segundo pago recibido");
+    expect(html).toContain("Saldo pendiente<br>liquidado.");
+    expect(html).toContain("121,00");
+    expect(html).toContain("Cliente &lt;prueba&gt;");
+    expect(html).not.toContain("Cliente <prueba>");
   });
 });
