@@ -104,7 +104,10 @@ export async function POST(request: Request) {
       pendingBalance: quote.pendingBalance,
       operationalStatus: "pendiente_de_pago",
       paymentStatus: "pendiente",
-      paymentExpiresAt
+      paymentExpiresAt,
+      // Constancia de la aceptación: ambos checkbox son obligatorios al reservar.
+      termsAcceptedAt: createdAt,
+      balanceTermsAcceptedAt: createdAt
     };
 
     if (supabase) {
@@ -234,6 +237,8 @@ function toDatabase(record: ReservationRecord) {
     notes: record.notes,
     internal_notes: record.internalNotes,
     accepts_marketing: record.acceptsMarketing,
-    payment_expires_at: record.paymentExpiresAt
+    payment_expires_at: record.paymentExpiresAt,
+    terms_accepted_at: record.termsAcceptedAt,
+    balance_terms_accepted_at: record.balanceTermsAcceptedAt
   };
 }

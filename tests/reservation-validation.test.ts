@@ -24,6 +24,7 @@ const validReservation = {
   billingPostalCode: "",
   billingCity: "",
   acceptsTerms: true,
+  acceptsBalanceTerms: true,
   acceptsMarketing: false
 };
 
@@ -34,6 +35,16 @@ describe("reservation validation", () => {
     const result = parseReservationInput(validReservation, now);
     expect(result.error).toBeNull();
     expect(result.data?.email).toBe("cliente@example.com");
+  });
+
+  it("requires accepting both the general terms and the second payment terms", () => {
+    expect(parseReservationInput({ ...validReservation, acceptsTerms: false }, now).error).toMatch(/términos/);
+    for (const acceptsBalanceTerms of [false, undefined, "true", 1]) {
+      const result = parseReservationInput({ ...validReservation, acceptsBalanceTerms }, now);
+      expect(result.data).toBeNull();
+      expect(result.error).toMatch(/segundo pago/);
+    }
+    expect(parseReservationInput(validReservation, now).data?.acceptsBalanceTerms).toBe(true);
   });
 
   it("rejects inherited service names and invalid quantities", () => {

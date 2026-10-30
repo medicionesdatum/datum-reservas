@@ -36,6 +36,17 @@ afterEach(() => {
 });
 
 describe("reservation email content", () => {
+  it("explains how and when the second payment is requested", () => {
+    const html = customerReservationConfirmedEmail(reservation);
+    const balanceIndex = html.indexOf("Saldo pendiente");
+    const notesIndex = html.indexOf("El segundo pago se solicitará por transferencia bancaria.");
+    const visitIndex = html.indexOf("Antes de la visita");
+
+    expect(notesIndex).toBeGreaterThan(balanceIndex);
+    expect(notesIndex).toBeLessThan(visitIndex);
+    expect(html).toContain("Deberá abonarse una vez finalizada la documentación y antes de su entrega.");
+  });
+
   it("escapes customer content and generates balanced lists", () => {
     const html = customerReservationConfirmedEmail(reservation);
 

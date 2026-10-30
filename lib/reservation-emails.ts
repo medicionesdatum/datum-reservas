@@ -198,6 +198,11 @@ export function customerReservationConfirmedEmail(record: ReservationEmailRecord
                   </td>
                 </tr>
                 <tr>
+                  <td class="datum-pad" style="padding:14px 48px 0 56px;border-left:8px solid #16d9e6;">
+                    <p style="margin:0;color:#657786;font-size:12px;line-height:19px;">* El segundo pago se solicitará por transferencia bancaria.<br>* Deberá abonarse una vez finalizada la documentación y antes de su entrega.</p>
+                  </td>
+                </tr>
+                <tr>
                   <td class="datum-pad" style="padding:40px 48px 0 56px;border-left:8px solid #16d9e6;">
                     <p style="margin:0;color:#087b87;font-size:11px;font-weight:700;line-height:16px;letter-spacing:1.8px;text-transform:uppercase;">Antes de la visita</p>
                     <h2 style="margin:9px 0 12px;color:#061729;font-family:Arial,Helvetica,sans-serif;font-size:28px;font-weight:700;line-height:35px;letter-spacing:-.5px;">Preparemos el espacio.</h2>
