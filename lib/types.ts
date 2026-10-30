@@ -54,6 +54,7 @@ export type ReservationInput = {
   notes?: string;
   couponCode?: string;
   acceptsTerms: boolean;
+  acceptsBalanceTerms: boolean;
   acceptsMarketing: boolean;
 };
 
@@ -73,6 +74,8 @@ export type ReservationRecord = ReservationInput & {
   operationalStatus: ReservationStatus;
   paymentStatus: PaymentStatus;
   paymentExpiresAt: string;
+  termsAcceptedAt: string;
+  balanceTermsAcceptedAt: string;
   depositPaymentLink?: string;
   depositSquareReference?: string;
   finalPaymentLink?: string;

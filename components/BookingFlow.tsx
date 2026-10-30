@@ -64,6 +64,7 @@ const initialForm: ReservationInput = {
   notes: "",
   couponCode: "",
   acceptsTerms: false,
+  acceptsBalanceTerms: false,
   acceptsMarketing: false
 };
 
@@ -248,6 +249,10 @@ export default function BookingFlow() {
 
     if (currentStep === "payment" && !form.acceptsTerms) {
       return "Acepta los términos obligatorios antes de pagar.";
+    }
+
+    if (currentStep === "payment" && !form.acceptsBalanceTerms) {
+      return "Acepta las condiciones del segundo pago antes de pagar.";
     }
 
     return "";
@@ -993,9 +998,15 @@ function StepPayment({
           <SummaryLine label="IVA 21%" value={formatCurrency(quote.vat)} />
           <SummaryLine label="Total" value={formatCurrency(quote.total)} strong />
           <SummaryLine label="Depósito para reservar" value={formatCurrency(quote.deposit)} strong />
-          <SummaryLine label="Saldo pendiente" value={formatCurrency(quote.pendingBalance)} />
+          <SummaryLine label="Saldo pendiente*" value={formatCurrency(quote.pendingBalance)} />
         </dl>
       </div>
+      <p className="mt-3 text-xs leading-5 text-slate-400">
+        * El saldo pendiente corresponde al segundo pago, que deberá abonarse
+        una vez finalizada la documentación y antes de su entrega. Su importe
+        podrá variar si, tras revisar el alcance real de los trabajos, este
+        difiere del indicado en la reserva.
+      </p>
       <label className="mt-5 block">
         <span className="text-sm text-slate-300">Cupón de descuento</span>
         <input
@@ -1020,6 +1031,20 @@ function StepPayment({
           política de privacidad. Entiendo que puedo solicitar un cambio de día
           hasta 48 horas antes de la cita; después de ese plazo, deberé
           contactar directamente con DATUM para coordinar cualquier modificación.
+        </span>
+      </label>
+      <label className="mt-3 flex gap-3 text-sm text-slate-200">
+        <input
+          checked={form.acceptsBalanceTerms}
+          className="mt-1 size-4"
+          onChange={(event) => onChange({ acceptsBalanceTerms: event.target.checked })}
+          type="checkbox"
+        />
+        <span>
+          Entiendo y acepto que el saldo pendiente* corresponde al segundo pago,
+          que se abonará antes de la entrega de la documentación, y que su
+          importe puede variar si el alcance real de los trabajos difiere del
+          indicado en la reserva.
         </span>
       </label>
       <label className="mt-3 flex gap-3 text-sm text-slate-300">

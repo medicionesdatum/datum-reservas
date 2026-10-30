@@ -85,6 +85,9 @@ export function parseReservationInput(value: unknown, now = Date.now()):
     return { data: null, error: "Introduce un código postal de facturación válido." };
   }
   if (input.acceptsTerms !== true) return { data: null, error: "Debes aceptar los términos obligatorios." };
+  if (input.acceptsBalanceTerms !== true) {
+    return { data: null, error: "Debes aceptar las condiciones del segundo pago." };
+  }
 
   return {
     data: {
@@ -114,6 +117,7 @@ export function parseReservationInput(value: unknown, now = Date.now()):
       notes: text(input.notes, 2000),
       couponCode: text(input.couponCode, 64),
       acceptsTerms: true,
+      acceptsBalanceTerms: true,
       acceptsMarketing: input.acceptsMarketing === true
     },
     error: null
