@@ -55,7 +55,7 @@ const initialForm: ReservationInput = {
   floor: "",
   postalCode: "",
   propertyFloors: 1,
-  requiresInvoice: false,
+  requiresInvoice: true,
   billingName: "",
   billingTaxId: "",
   billingAddress: "",
@@ -233,16 +233,15 @@ export default function BookingFlow() {
         return "Completa los datos del inmueble.";
       }
       if (
-        form.requiresInvoice &&
-        (!form.billingName ||
-          !form.billingTaxId ||
-          !form.billingAddress ||
-          !form.billingPostalCode ||
-          !form.billingCity)
+        !form.billingName ||
+        !form.billingTaxId ||
+        !form.billingAddress ||
+        !form.billingPostalCode ||
+        !form.billingCity
       ) {
         return "Completa los datos de facturación.";
       }
-      if (form.requiresInvoice && !/^\d{5}$/.test(form.billingPostalCode)) {
+      if (!/^\d{5}$/.test(form.billingPostalCode)) {
         return "Introduce un código postal de facturación válido.";
       }
     }
@@ -914,21 +913,9 @@ function StepCustomer({
 
       <div className="mt-7 border-t border-datum-line pt-7">
         <h3 className="text-lg font-semibold text-white">Datos de facturación</h3>
-        <label className="mt-4 flex gap-3 border border-datum-line bg-white/[0.03] p-4 text-sm text-slate-200">
-          <input
-            checked={form.requiresInvoice}
-            className="mt-1 size-4 accent-datum-cyan"
-            onChange={(event) => onChange({ requiresInvoice: event.target.checked })}
-            type="checkbox"
-          />
-          <span>
-            <strong className="block font-semibold text-white">Necesito factura</strong>
-            <span className="mt-1 block text-slate-400">
-              Completa los datos fiscales que deben aparecer en la factura.
-            </span>
-          </span>
-        </label>
-        {form.requiresInvoice ? (
+        <p className="mt-2 text-sm text-slate-400">
+          Indica los datos fiscales que deben aparecer en la factura.
+        </p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <Field
               className="md:col-span-2"
@@ -958,7 +945,6 @@ function StepCustomer({
               onChange={(billingCity) => onChange({ billingCity })}
             />
           </div>
-        ) : null}
       </div>
     </section>
   );
@@ -992,7 +978,7 @@ function StepPayment({
           <SummaryLine label="Fecha y hora" value={`${form.visitDate} ${form.visitTime}`} />
           <SummaryLine
             label="Factura"
-            value={form.requiresInvoice ? `Sí · ${form.billingName}` : "No solicitada"}
+            value={form.billingName}
           />
           <SummaryLine label="Base imponible" value={formatCurrency(quote.taxableBase)} />
           <SummaryLine label="IVA 21%" value={formatCurrency(quote.vat)} />

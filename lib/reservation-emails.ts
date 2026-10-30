@@ -324,7 +324,7 @@ export function customerSecondPaymentEmail(record: ReservationEmailRecord, amoun
                 </tr>
                 <tr>
                   <td class="datum-pad" style="padding:30px 48px 48px 56px;border-left:8px solid #16d9e6;">
-                    <p style="margin:0;color:#425466;font-size:14px;line-height:23px;">Square te ha enviado además el recibo del pago como justificante. Si necesitas una factura o tienes cualquier duda, escríbenos y te ayudaremos.</p>
+                    <p style="margin:0;color:#425466;font-size:14px;line-height:23px;">Square te ha enviado además el recibo del pago como justificante. Si tienes cualquier duda, escríbenos y te ayudaremos.</p>
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:26px;border-collapse:collapse;">
                       <tr>
                         <td style="border:1px solid #087b87;">
