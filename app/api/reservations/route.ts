@@ -124,7 +124,7 @@ export async function POST(request: Request) {
 
     const paymentLink = await createSquarePaymentLink({
       reservationId,
-      description: `Depósito DATUM - ${services[input.serviceId].name} - ${input.fullAddress}`,
+      description: `${input.fullAddress} - Depósito DATUM - ${services[input.serviceId].name}`,
       amountInCents: cents(quote.deposit),
       kind: "deposit",
       customerEmail: input.email,
@@ -150,7 +150,7 @@ export async function POST(request: Request) {
     try {
       await sendReservationEmail({
         to: notificationEmails(),
-        subject: `Solicitud pendiente de pago - ${input.visitDate} ${input.visitTime} - ${input.fullAddress}`,
+        subject: `${input.fullAddress} - Solicitud pendiente de pago - ${input.visitDate} ${input.visitTime}`,
         html: adminPendingReservationEmail(record),
         idempotencyKey: `reservation-pending-admin/${reservationId}`
       });

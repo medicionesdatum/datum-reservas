@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 
     const payment = await createSquarePaymentLink({
       reservationId: id,
-      description: `Saldo final ajustado DATUM Mediciones - ${reservation.full_address}`,
+      description: `${reservation.full_address} - Saldo final ajustado DATUM Mediciones`,
       amountInCents: adjustment.amountInCents,
       kind: "adjustment",
       idempotencyKeySuffix: `-${randomUUID()}`
