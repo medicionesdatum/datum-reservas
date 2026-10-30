@@ -264,6 +264,100 @@ export function customerReservationConfirmedEmail(record: ReservationEmailRecord
   `;
 }
 
+export function customerSecondPaymentEmail(record: ReservationEmailRecord, amountPaid: number) {
+  const service = services[record.serviceId] ?? services.point_cloud;
+  const contactEmail = "info@medicionesdatum.es";
+
+  return `
+    <!doctype html>
+    <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="x-apple-disable-message-reformatting">
+        <title>Segundo pago recibido - DATUM</title>
+        <style>
+          @media only screen and (max-width: 620px) {
+            .datum-shell { width: 100% !important; }
+            .datum-pad { padding-left: 24px !important; padding-right: 24px !important; }
+            .datum-hero { font-size: 34px !important; line-height: 38px !important; }
+          }
+        </style>
+      </head>
+      <body style="margin:0;padding:0;background-color:#edf1f3;color:#102033;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;">
+        <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+          Hemos recibido tu segundo pago. El saldo pendiente de tu reserva con DATUM queda liquidado.
+        </div>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#edf1f3;border-collapse:collapse;">
+          <tr>
+            <td align="center" style="padding:32px 12px;">
+              <table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" class="datum-shell" style="width:640px;max-width:640px;background-color:#ffffff;border-collapse:collapse;">
+                <tr>
+                  <td style="background-color:#061729;border-right:8px solid #16d9e6;padding:34px 40px;">
+                    <img src="https://medicionesdatum.es/assets/datum-logo.png" width="184" alt="DATUM" style="display:block;width:184px;max-width:100%;height:auto;border:0;">
+                  </td>
+                </tr>
+                <tr>
+                  <td class="datum-pad" style="padding:48px 48px 30px 56px;border-left:8px solid #16d9e6;">
+                    <p style="margin:0 0 20px;color:#087b87;font-size:12px;font-weight:700;line-height:18px;letter-spacing:2.2px;text-transform:uppercase;">Segundo pago recibido</p>
+                    <h1 class="datum-hero" style="margin:0;color:#061729;font-family:Arial,Helvetica,sans-serif;font-size:46px;font-weight:400;line-height:50px;letter-spacing:-1.7px;">Saldo pendiente<br>liquidado.</h1>
+                    <p style="margin:28px 0 0;color:#425466;font-size:16px;line-height:26px;">Hola, ${escapeHtml(record.customerName)}.</p>
+                    <p style="margin:8px 0 0;color:#425466;font-size:16px;line-height:26px;">Hemos recibido correctamente tu segundo pago. Con él, tu reserva queda pagada por completo y no tienes ningún importe pendiente con DATUM.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="datum-pad" style="padding:0 48px 0 56px;border-left:8px solid #16d9e6;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#061729;border-collapse:collapse;">
+                      <tr>
+                        <td width="58%" valign="top" style="width:58%;padding:25px 24px;">
+                          <p style="margin:0;color:#9eacb8;font-size:10px;font-weight:700;line-height:15px;letter-spacing:1.5px;text-transform:uppercase;">Servicio</p>
+                          <p style="margin:11px 0 0;color:#ffffff;font-size:14px;font-weight:700;line-height:22px;">${escapeHtml(service.name)}</p>
+                          <p style="margin:6px 0 0;color:#dce5ec;font-size:13px;line-height:20px;">${escapeHtml(record.fullAddress)}</p>
+                        </td>
+                        <td width="42%" valign="bottom" align="right" style="width:42%;padding:25px 24px;text-align:right;">
+                          <p style="margin:0;color:#9eacb8;font-size:10px;font-weight:700;line-height:15px;letter-spacing:1.5px;text-transform:uppercase;">Segundo pago</p>
+                          <p style="margin:8px 0 0;color:#16d9e6;font-family:Arial,Helvetica,sans-serif;font-size:27px;font-weight:700;line-height:32px;">${escapeHtml(formatCurrency(amountPaid))}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="datum-pad" style="padding:30px 48px 48px 56px;border-left:8px solid #16d9e6;">
+                    <p style="margin:0;color:#425466;font-size:14px;line-height:23px;">Square te ha enviado además el recibo del pago como justificante. Si necesitas una factura o tienes cualquier duda, escríbenos y te ayudaremos.</p>
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:26px;border-collapse:collapse;">
+                      <tr>
+                        <td style="border:1px solid #087b87;">
+                          <a href="mailto:${contactEmail}" style="display:inline-block;padding:13px 20px;color:#087b87;font-size:13px;font-weight:700;line-height:18px;text-decoration:none;">Contactar con DATUM</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px 40px;background-color:#061729;">
+                    <p style="margin:0;color:#ffffff;font-size:13px;font-weight:700;line-height:20px;">DATUM Mediciones</p>
+                    <p style="margin:5px 0 0;color:#9eacb8;font-size:11px;line-height:18px;">Medición precisa · Documentación fiable</p>
+                    <p style="margin:12px 0 0;color:#9eacb8;font-size:11px;line-height:18px;"><a href="https://medicionesdatum.es" style="color:#16d9e6;text-decoration:none;">medicionesdatum.es</a> · <a href="mailto:${contactEmail}" style="color:#16d9e6;text-decoration:none;">${contactEmail}</a></p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+}
+
+export function adminSecondPaymentEmail(record: ReservationEmailRecord, amountPaid: number) {
+  return adminReservationEmail({
+    record,
+    title: "Segundo pago recibido",
+    intro: `Square confirmó el segundo pago (${formatCurrency(amountPaid)}). La reserva queda pagada por completo.`
+  });
+}
+
 export function adminPendingReservationEmail(record: ReservationEmailRecord) {
   return adminReservationEmail({
     record,

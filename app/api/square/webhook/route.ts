@@ -5,7 +5,9 @@ import { normalizeDiscountCode } from "@/lib/discount-codes";
 import { sendReservationEmailBatch } from "@/lib/email";
 import {
   adminConfirmedReservationEmail,
+  adminSecondPaymentEmail,
   customerReservationConfirmedEmail,
+  customerSecondPaymentEmail,
   notificationEmails,
   reservationFromDatabase
 } from "@/lib/reservation-emails";
@@ -166,6 +168,34 @@ export async function POST(request: Request) {
     after(() => deleteSquarePaymentLink(otherLinkId).catch((closeError) => {
       console.error("No se pudo cerrar el enlace de pago alternativo", { reservationId, message: closeError instanceof Error ? closeError.message : "unknown" });
     }));
+  }
+
+  if (kind !== "deposit" && !wasAlreadyPaid) {
+    const emailRecord = reservationFromDatabase(updatedReservation);
+    const amountPaid = expectedPaymentAmount(kind, reservation);
+    // El pago ya está registrado: un fallo de email no debe hacer reintentar el webhook.
+    after(() =>
+      sendReservationEmailBatch(
+        [
+          {
+            to: emailRecord.email,
+            subject: "Segundo pago recibido - DATUM Mediciones",
+            html: customerSecondPaymentEmail(emailRecord, amountPaid)
+          },
+          {
+            to: notificationEmails(),
+            subject: `Segundo pago recibido DATUM - ${emailRecord.customerName}`,
+            html: adminSecondPaymentEmail(emailRecord, amountPaid)
+          }
+        ],
+        `second-payment/${reservationId}`
+      ).catch((emailError) => {
+        console.error("Could not send second payment emails", {
+          reservationId,
+          error: emailError instanceof Error ? emailError.message : "unknown"
+        });
+      })
+    );
   }
 
   if (kind === "deposit") {
