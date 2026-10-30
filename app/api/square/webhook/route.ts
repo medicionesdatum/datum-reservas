@@ -179,12 +179,12 @@ export async function POST(request: Request) {
         [
           {
             to: emailRecord.email,
-            subject: "Segundo pago recibido - DATUM Mediciones",
+            subject: `Segundo pago recibido - DATUM Mediciones - ${emailRecord.fullAddress}`,
             html: customerSecondPaymentEmail(emailRecord, amountPaid)
           },
           {
             to: notificationEmails(),
-            subject: `Segundo pago recibido DATUM - ${emailRecord.customerName}`,
+            subject: `Segundo pago recibido DATUM - ${emailRecord.customerName} - ${emailRecord.fullAddress}`,
             html: adminSecondPaymentEmail(emailRecord, amountPaid)
           }
         ],
@@ -239,12 +239,12 @@ export async function POST(request: Request) {
         [
           {
             to: emailRecord.email,
-            subject: "Reserva confirmada - DATUM Mediciones",
+            subject: `Reserva confirmada - DATUM Mediciones - ${emailRecord.fullAddress}`,
             html: customerReservationConfirmedEmail(emailRecord)
           },
           {
             to: notificationEmails(),
-            subject: `Nueva cita confirmada DATUM - ${emailRecord.visitDate} ${emailRecord.visitTime}`,
+            subject: `Nueva cita confirmada DATUM - ${emailRecord.visitDate} ${emailRecord.visitTime} - ${emailRecord.fullAddress}`,
             html: adminConfirmedReservationEmail(emailRecord)
           }
         ],

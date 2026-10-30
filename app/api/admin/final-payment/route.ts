@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
     const payment = await createSquarePaymentLink({
       reservationId: id,
-      description: "Saldo final DATUM Mediciones",
+      description: `Saldo final DATUM Mediciones - ${reservation.full_address}`,
       amountInCents,
       kind: "final",
       // Square devuelve el enlace original (aunque esté cerrado) si se repite la misma clave de idempotencia.
