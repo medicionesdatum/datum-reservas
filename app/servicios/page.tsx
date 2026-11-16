@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { GoogleReviews } from "@/components/GoogleReviews";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import {
@@ -370,6 +371,8 @@ export default function ServicesPage() {
             </div>
           </div>
         </section>
+
+        <GoogleReviews />
 
         <section className="px-5 py-16 md:px-8 md:py-24" id="contacto">
           <div className="mx-auto grid max-w-7xl scroll-mt-20 gap-8 rounded-xl border border-datum-cyan/40 bg-[linear-gradient(135deg,rgba(22,217,230,0.12),rgba(11,29,50,0.82))] p-7 md:p-12 lg:grid-cols-[1fr_auto] lg:items-center">
