@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { getBookableSlots, isPastDate, nextBusinessDate } from "@/lib/availability";
@@ -68,7 +69,8 @@ const initialForm: ReservationInput = {
   acceptsMarketing: false
 };
 
-export default function BookingFlow() {
+/** `reviews` es un componente de servidor (reseñas de Google) que se coloca antes del pie. */
+export default function BookingFlow({ reviews }: { reviews?: ReactNode }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<ReservationInput>(initialForm);
   const [error, setError] = useState("");
@@ -499,6 +501,8 @@ export default function BookingFlow() {
         ) : null}
         </section>
       </main>
+
+      {reviews}
 
       <SiteFooter />
     </div>

@@ -1,4 +1,5 @@
 import BookingFlow from "@/components/BookingFlow";
+import { GoogleReviews } from "@/components/GoogleReviews";
 import { site, servicesForAgents } from "@/lib/site-content";
 
 export default function Home() {
@@ -81,7 +82,7 @@ export default function Home() {
         }}
         type="application/ld+json"
       />
-      <BookingFlow />
+      <BookingFlow reviews={<GoogleReviews />} />
       <section className="sr-only" aria-label="Resumen de DATUM Mediciones">
         <h2>DATUM Mediciones: medición y documentación técnica</h2>
         <p>{site.description}</p>

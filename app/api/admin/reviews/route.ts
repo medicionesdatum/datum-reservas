@@ -16,6 +16,7 @@ function noDatabase() {
 }
 
 function refreshPublicPages() {
+  revalidatePath("/");
   revalidatePath("/servicios");
 }
 
