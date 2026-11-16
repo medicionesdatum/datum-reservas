@@ -213,7 +213,7 @@ export default function ServicesPage() {
             <div className="space-y-5 text-base leading-8 text-slate-300">
               <p>
                 DATUM es la unidad de escaneado láser 3D y documentación técnica de
-                DOGROUP STUDIO. Hemos realizado más de 50 mediciones en Madrid con un
+                DOGROUP STUDIO. Hemos realizado más de 100 mediciones en Madrid con un
                 equipo especializado en captura LiDAR y procesado de nubes de puntos.
               </p>
               <p>
