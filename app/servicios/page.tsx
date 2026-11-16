@@ -205,7 +205,7 @@ export default function ServicesPage() {
         <section className="px-5 py-16 md:px-8 md:py-24">
           <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.75fr_1.25fr]">
             <div>
-              <p className="section-eyebrow">Quiénes somos</p>
+              <p className="section-eyebrow">Sobre DATUM</p>
               <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                 Datos reales para decisiones técnicas.
               </h2>

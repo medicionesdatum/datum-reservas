@@ -83,7 +83,7 @@ export function SiteNavigation({ compact = false }: { compact?: boolean }) {
         </Link>
         <Link
           className={navButtonClass}
-          href="/servicios#contacto"
+          href="/contacto"
           onClick={closeMobileMenu}
         >
           Contacto

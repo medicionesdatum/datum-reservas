@@ -4,7 +4,7 @@ import { absoluteUrl, site } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Sobre DATUM",
-  description: "Quiénes somos y cómo trabaja DATUM Mediciones.",
+  description: "Qué es DATUM y cómo trabaja DATUM Mediciones.",
   alternates: {
     canonical: absoluteUrl("/sobre-datum")
   }

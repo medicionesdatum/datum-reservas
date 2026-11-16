@@ -3,7 +3,7 @@
 import { useRef } from "react";
 
 const menuItems = [
-  { label: "Servicios", href: "/servicios#servicios" },
+  { label: "Servicios", href: "/servicios" },
   { label: "Proceso", href: "/servicios#como-trabajamos" },
   { label: "Comparativa", href: "/servicios#comparativa" },
   { label: "Casos de uso", href: "/servicios#casos-de-uso" }
