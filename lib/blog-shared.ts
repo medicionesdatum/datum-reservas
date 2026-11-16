@@ -22,7 +22,29 @@ export type BlogPostInput = {
   category: string;
   authorName: string;
   isPublished: boolean;
+  /** Fecha ISO futura en la que el artículo pasa a ser visible; null = al guardar. */
+  publishAt: string | null;
 };
+
+const MAX_SCHEDULE_AHEAD_MS = 366 * 24 * 60 * 60 * 1000;
+
+/** Acepta solo ISO 8601 con zona horaria ("Z" o ±hh:mm) para que la hora programada no sea ambigua. */
+export function parsePublishAt(value: unknown, now = new Date()):
+  | { ok: true; value: string | null }
+  | { ok: false; error: string } {
+  if (value === undefined || value === null || value === "") return { ok: true, value: null };
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/.test(value)) {
+    return { ok: false, error: "La fecha de publicación debe ser ISO con zona horaria, por ejemplo 2026-11-20T09:00:00+01:00." };
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return { ok: false, error: "La fecha de publicación no es válida." };
+  }
+  if (date.getTime() - now.getTime() > MAX_SCHEDULE_AHEAD_MS) {
+    return { ok: false, error: "La fecha de publicación no puede superar un año." };
+  }
+  return { ok: true, value: date.toISOString() };
+}
 
 export function normalizeBlogSlug(value: string) {
   return value
@@ -83,6 +105,11 @@ export function validateBlogPostInput(body: unknown):
   if (typeof input.isPublished !== "boolean") {
     return { ok: false, error: "Indica si el artículo se publica o queda como borrador." };
   }
+  const publishAt = parsePublishAt(input.publishAt);
+  if (!publishAt.ok) return publishAt;
+  if (publishAt.value && !input.isPublished) {
+    return { ok: false, error: "Para programar un artículo hay que marcarlo como publicado." };
+  }
 
   return {
     ok: true,
@@ -94,7 +121,8 @@ export function validateBlogPostInput(body: unknown):
       coverImageUrl: coverImageUrl || null,
       category,
       authorName,
-      isPublished: input.isPublished
+      isPublished: input.isPublished,
+      publishAt: publishAt.value
     }
   };
 }

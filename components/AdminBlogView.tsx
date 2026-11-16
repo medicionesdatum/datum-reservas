@@ -17,7 +17,19 @@ type BlogForm = {
   category: string;
   authorName: string;
   isPublished: boolean;
+  /** Valor de un input datetime-local (hora local del navegador); vacío = publicar al guardar. */
+  publishAt: string;
 };
+
+function toLocalInputValue(iso: string) {
+  const date = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function isScheduled(post: BlogPost) {
+  return post.is_published && Boolean(post.published_at) && new Date(post.published_at as string).getTime() > Date.now();
+}
 
 const emptyForm: BlogForm = {
   title: "",
@@ -27,7 +39,8 @@ const emptyForm: BlogForm = {
   coverImageUrl: "",
   category: "Innovación",
   authorName: "Equipo DATUM",
-  isPublished: false
+  isPublished: false,
+  publishAt: ""
 };
 
 export function AdminBlogView({
@@ -78,7 +91,8 @@ export function AdminBlogView({
       coverImageUrl: post.cover_image_url ?? "",
       category: post.category,
       authorName: post.author_name,
-      isPublished: post.is_published
+      isPublished: post.is_published,
+      publishAt: isScheduled(post) ? toLocalInputValue(post.published_at as string) : ""
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -92,7 +106,11 @@ export function AdminBlogView({
         "x-admin-email": email,
         "x-admin-password": password
       },
-      body: JSON.stringify({ id: editingId || undefined, ...form })
+      body: JSON.stringify({
+        id: editingId || undefined,
+        ...form,
+        publishAt: form.isPublished && form.publishAt ? new Date(form.publishAt).toISOString() : undefined
+      })
     });
     const payload = await response.json();
     setIsSaving(false);
@@ -108,8 +126,48 @@ export function AdminBlogView({
         ? current.map((post) => (post.id === saved.id ? saved : post))
         : [saved, ...current]
     );
-    setMessage(saved.is_published ? "Artículo publicado correctamente." : "Borrador guardado.");
+    setMessage(
+      isScheduled(saved)
+        ? `Artículo programado para el ${new Date(saved.published_at as string).toLocaleString("es-ES", { dateStyle: "long", timeStyle: "short" })}.`
+        : saved.is_published
+          ? "Artículo publicado correctamente."
+          : "Borrador guardado."
+    );
     resetForm();
+  }
+
+  async function cancelSchedule(post: BlogPost) {
+    if (!window.confirm(`¿Cancelar la programación de “${post.title}”? Volverá a borrador.`)) return;
+
+    const response = await fetch("/api/admin/blog", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-email": email,
+        "x-admin-password": password
+      },
+      body: JSON.stringify({
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        excerpt: post.excerpt,
+        content: post.content,
+        coverImageUrl: post.cover_image_url ?? "",
+        category: post.category,
+        authorName: post.author_name,
+        isPublished: false
+      })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(payload.error ?? "No se pudo cancelar la programación.");
+      return;
+    }
+
+    const saved = payload.blogPost as BlogPost;
+    onPostsChange((current) => current.map((item) => (item.id === saved.id ? saved : item)));
+    if (editingId === post.id) resetForm();
+    setMessage("Programación cancelada: el artículo ha vuelto a borrador.");
   }
 
   async function deletePost(post: BlogPost) {
@@ -288,6 +346,22 @@ export function AdminBlogView({
               Si no lo marcas, el artículo quedará guardado como borrador.
             </span>
           </label>
+
+          {form.isPublished ? (
+            <label className="block border border-datum-line bg-white/[0.03] p-4 sm:col-span-2">
+              <span className="text-sm text-slate-300">
+                <strong className="block text-white">Programar publicación (opcional)</strong>
+                Elige día y hora para que se publique solo. Si lo dejas vacío, se publica al guardar.
+              </span>
+              <input
+                className="focus-ring mt-3 w-full rounded border border-datum-line bg-white px-4 py-3 text-datum-ink"
+                min={toLocalInputValue(new Date().toISOString())}
+                onChange={(event) => updateForm("publishAt", event.target.value)}
+                type="datetime-local"
+                value={form.publishAt}
+              />
+            </label>
+          ) : null}
         </div>
 
         <button
@@ -296,7 +370,7 @@ export function AdminBlogView({
           onClick={savePost}
           type="button"
         >
-          {isSaving ? "Guardando..." : form.isPublished ? "Guardar y publicar" : "Guardar borrador"}
+          {isSaving ? "Guardando..." : form.isPublished ? (form.publishAt ? "Guardar y programar" : "Guardar y publicar") : "Guardar borrador"}
         </button>
       </section>
 
@@ -314,8 +388,10 @@ export function AdminBlogView({
             <article className="border border-datum-line bg-white/[0.025] p-4" key={post.id}>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <span className={`text-xs font-semibold uppercase tracking-[0.12em] ${post.is_published ? "text-datum-cyan" : "text-amber-200"}`}>
-                    {post.is_published ? "Publicado" : "Borrador"}
+                  <span className={`text-xs font-semibold uppercase tracking-[0.12em] ${isScheduled(post) ? "text-sky-200" : post.is_published ? "text-datum-cyan" : "text-amber-200"}`}>
+                    {isScheduled(post)
+                      ? `Programado · ${new Date(post.published_at as string).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" })}`
+                      : post.is_published ? "Publicado" : "Borrador"}
                   </span>
                   <h3 className="mt-2 font-semibold leading-6">{post.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-400">{post.excerpt}</p>
@@ -323,7 +399,10 @@ export function AdminBlogView({
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-datum-line pt-3 text-sm">
                 <button className="font-semibold text-datum-cyan" onClick={() => editPost(post)} type="button">Editar</button>
-                {post.is_published ? <Link className="text-slate-300 hover:text-white" href={`/blog/${post.slug}`} target="_blank">Ver artículo</Link> : null}
+                {post.is_published && !isScheduled(post) ? <Link className="text-slate-300 hover:text-white" href={`/blog/${post.slug}`} target="_blank">Ver artículo</Link> : null}
+                {isScheduled(post) ? (
+                  <button className="text-amber-200 hover:text-white" onClick={() => cancelSchedule(post)} type="button">Cancelar programación</button>
+                ) : null}
                 <button className="text-rose-200 hover:text-white" onClick={() => deletePost(post)} type="button">Eliminar</button>
               </div>
             </article>
