@@ -40,7 +40,7 @@ export const publicPages = [
   {
     path: "/sobre-datum",
     title: "Sobre DATUM",
-    description: "Quiénes somos y cómo trabaja DATUM Mediciones."
+    description: "Qué es DATUM y cómo trabaja DATUM Mediciones."
   },
   {
     path: "/blog",
