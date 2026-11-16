@@ -53,7 +53,8 @@ export async function POST(request: Request) {
       category: input.category,
       author_name: input.authorName,
       is_published: input.isPublished,
-      published_at: input.isPublished ? new Date().toISOString() : null
+      // Un artículo publicado con fecha futura queda oculto hasta esa hora: el blog filtra por published_at <= ahora.
+      published_at: input.isPublished ? input.publishAt ?? new Date().toISOString() : null
     })
     .select("*")
     .single();
@@ -108,7 +109,7 @@ export async function PATCH(request: Request) {
       category: input.category,
       author_name: input.authorName,
       is_published: input.isPublished,
-      published_at: input.isPublished ? current.published_at ?? new Date().toISOString() : null
+      published_at: input.isPublished ? input.publishAt ?? current.published_at ?? new Date().toISOString() : null
     })
     .eq("id", body.id)
     .select("*")

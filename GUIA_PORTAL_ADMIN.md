@@ -178,6 +178,9 @@ Campos disponibles:
 - Imagen de portada mediante URL o carga desde el equipo.
 - Contenido con formato Markdown sencillo.
 - Estado de borrador o publicado.
+- Publicacion programada (opcional): al marcar "Publicar en la web" aparece un selector de dia y hora. El articulo queda oculto y se publica solo a esa hora, sin ninguna accion manual. En la biblioteca aparece como "Programado" con su fecha; se puede editar o cambiar la fecha hasta que llegue.
+
+Para agentes o integraciones que usan la API (`POST`/`PATCH /api/admin/blog`): enviar `isPublished: true` y `publishAt` en formato ISO 8601 con zona horaria, por ejemplo `2026-11-20T09:00:00+01:00` (hora de Madrid en invierno; `+02:00` en verano). Sin `publishAt` se publica al guardar. Sin zona horaria la fecha se rechaza, y no puede superar un ano.
 
 Las imagenes pueden ser JPG, PNG o WebP y deben pesar como maximo 5 MB. Antes de publicar, revisar el titulo, la direccion, el resumen y la vista previa de la portada. La eliminacion de un articulo es definitiva.
 
