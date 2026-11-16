@@ -179,7 +179,7 @@ export function AdminReviewsView({
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-datum-cyan">Opiniones</p>
         <h1 className="mt-2 text-3xl font-semibold">Reseñas de Google</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-          Copia aquí las reseñas de vuestra ficha de Google que quieras enseñar en la web. Se muestran en la página de Servicios, siempre marcadas como reseñas de Google.
+          Copia aquí las reseñas de vuestra ficha de Google que quieras enseñar en la web. Se muestran en la portada y en la página de Servicios, siempre marcadas como reseñas de Google.
         </p>
       </header>
 

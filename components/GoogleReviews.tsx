@@ -101,7 +101,6 @@ export async function GoogleReviews() {
             );
           })}
         </ul>
-        <p className="mt-2 text-xs text-slate-500">Selección de reseñas publicadas por nuestros clientes en Google.</p>
       </div>
     </section>
   );
