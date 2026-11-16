@@ -8,6 +8,9 @@ import { formatCurrency, services } from "@/lib/pricing";
 import { getAllowedSlots } from "@/lib/availability";
 import { buildReservationsCsv } from "@/lib/reservations-csv";
 
+const AdminReviewsView = dynamic(() =>
+  import("@/components/AdminReviewsView").then((module) => module.AdminReviewsView)
+);
 const AdminBlogView = dynamic(() =>
   import("@/components/AdminBlogView").then((module) => module.AdminBlogView)
 );
@@ -75,7 +78,7 @@ type DiscountCode = {
   created_at?: string;
 };
 
-type AdminView = "resumen" | "calendario" | "reservas" | "clientes" | "descuentos" | "blog" | "seguridad";
+type AdminView = "resumen" | "calendario" | "reservas" | "clientes" | "descuentos" | "blog" | "resenas" | "seguridad";
 
 const statuses = [
   "nueva_solicitud", "pendiente_de_pago", "deposito_pagado", "reserva_confirmada",
@@ -99,6 +102,7 @@ const viewLabels: { id: AdminView; label: string; short: string }[] = [
   { id: "clientes", label: "Clientes", short: "P" },
   { id: "descuentos", label: "Descuentos", short: "%" },
   { id: "blog", label: "Blog", short: "B" },
+  { id: "resenas", label: "Reseñas", short: "G" },
   { id: "seguridad", label: "Cambiar clave", short: "K" }
 ];
 
@@ -340,6 +344,7 @@ export default function AdminDashboard() {
         {view === "clientes" ? <ClientsView reservations={reservations} onOpenReservation={(id) => { setSelectedId(id); setView("reservas"); }} /> : null}
         {view === "descuentos" ? <DiscountCodesView discountCodes={discountCodes} onCreate={createDiscountCode} onUpdate={updateDiscountCode} onDelete={deleteDiscountCode} /> : null}
         {view === "blog" ? <AdminBlogView posts={blogPosts} email={email} password={password} onPostsChange={setBlogPosts} setMessage={setMessage} /> : null}
+        {view === "resenas" ? <AdminReviewsView email={email} password={password} setMessage={setMessage} /> : null}
         {view === "seguridad" ? <PasswordChangeView email={email} password={password} onPasswordChanged={setPassword} /> : null}
       </main>
     </div>

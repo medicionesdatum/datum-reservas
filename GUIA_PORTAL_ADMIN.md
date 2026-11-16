@@ -181,6 +181,15 @@ Campos disponibles:
 
 Las imagenes pueden ser JPG, PNG o WebP y deben pesar como maximo 5 MB. Antes de publicar, revisar el titulo, la direccion, el resumen y la vista previa de la portada. La eliminacion de un articulo es definitiva.
 
+### Resenas de Google
+
+Permite elegir que resenas de la ficha de Google se muestran en la pagina de Servicios, con el estilo de DATUM. Cada tarjeta indica que es una resena de Google y la seccion se oculta sola si no hay ninguna visible.
+
+- Anadir: copiar el nombre, la puntuacion y el texto desde la ficha de Google (la fecha es opcional, por ejemplo "hace 1 ano").
+- Editar, ocultar/mostrar, subir/bajar (orden en la web) y eliminar cada resena.
+- Ficha de Google: enlace a la ficha, enlace para escribir una resena, nota media y numero total. Se escriben a mano; conviene actualizarlos de vez en cuando.
+- Las resenas no se sincronizan solas con Google: lo que se ve en la web es la seleccion guardada aqui.
+
 ## Estados de reserva
 
 Estados operativos disponibles:
