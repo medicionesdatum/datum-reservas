@@ -156,6 +156,7 @@ Al crear un codigo se puede definir:
 Acciones disponibles:
 
 - Crear codigo.
+- Editar codigo: pulsar `Editar` en la fila. El formulario de la izquierda se rellena con sus datos y permite cambiar tipo, valor, fecha de vencimiento (o dejarla vacia para que no venza), limite de usos, `1 por cliente` y base minima. El nombre del codigo no se cambia: para otro nombre hay que crear un codigo nuevo.
 - Activar o desactivar codigo.
 - Marcar o quitar `1 por email`.
 - Eliminar codigo.
@@ -274,10 +275,10 @@ Ir a `Calendario`, seleccionar el dia y pulsar `Liberar` en el bloqueo.
 
 ### Codigo de descuento no funciona
 
-Revisar:
+En la tabla, la columna `Estado` indica si esta `Activo`, `Inactivo`, `Caducado` o `Agotado`. Revisar:
 
 - Que este activo.
-- Que no este vencido.
+- Que no este vencido (se puede ampliar con `Editar`).
 - Que no haya alcanzado el limite de usos.
 - Que cumpla la base minima.
 - Que el email no lo haya usado antes si esta marcado como `1 por email`.

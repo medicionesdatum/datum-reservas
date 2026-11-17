@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { BlogPost } from "@/lib/blog-shared";
 import { formatCurrency, services } from "@/lib/pricing";
 import { getAllowedSlots } from "@/lib/availability";
@@ -247,7 +247,7 @@ export default function AdminDashboard() {
     maxUses?: number;
     onePerEmail?: boolean;
     minTaxableBase?: number;
-  }) {
+  }): Promise<string | null> {
     const response = await fetch("/api/admin/discount-codes", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-admin-email": email, "x-admin-password": password },
@@ -255,15 +255,16 @@ export default function AdminDashboard() {
     });
     const payload = await response.json();
     if (!response.ok) {
-      setMessage(payload.error ?? "No se pudo crear el código.");
-      return false;
+      const error = payload.error ?? "No se pudo crear el código.";
+      setMessage(error);
+      return error;
     }
     setDiscountCodes((current) => [payload.discountCode, ...current]);
     setMessage("Código de descuento creado.");
-    return true;
+    return null;
   }
 
-  async function updateDiscountCode(id: string, update: Partial<DiscountCode>) {
+  async function updateDiscountCode(id: string, update: Record<string, unknown>): Promise<string | null> {
     const response = await fetch("/api/admin/discount-codes", {
       method: "PATCH",
       headers: { "Content-Type": "application/json", "x-admin-email": email, "x-admin-password": password },
@@ -271,11 +272,13 @@ export default function AdminDashboard() {
     });
     const payload = await response.json();
     if (!response.ok) {
-      setMessage(payload.error ?? "No se pudo actualizar el código.");
-      return;
+      const error = payload.error ?? "No se pudo actualizar el código.";
+      setMessage(error);
+      return error;
     }
     setDiscountCodes((current) => current.map((item) => item.id === id ? payload.discountCode : item));
     setMessage("Código actualizado.");
+    return null;
   }
 
   async function deleteDiscountCode(id: string) {
@@ -881,8 +884,8 @@ function DiscountCodesView({
   onDelete
 }: {
   discountCodes: DiscountCode[];
-  onCreate: (input: { code: string; type: "percentage" | "fixed"; value: number; expiresAt?: string; maxUses?: number; onePerEmail?: boolean; minTaxableBase?: number }) => Promise<boolean>;
-  onUpdate: (id: string, update: Partial<DiscountCode>) => void;
+  onCreate: (input: { code: string; type: "percentage" | "fixed"; value: number; expiresAt?: string; maxUses?: number; onePerEmail?: boolean; minTaxableBase?: number }) => Promise<string | null>;
+  onUpdate: (id: string, update: Record<string, unknown>) => Promise<string | null>;
   onDelete: (id: string) => void;
 }) {
   const [code, setCode] = useState("");
@@ -892,42 +895,93 @@ function DiscountCodesView({
   const [maxUses, setMaxUses] = useState("");
   const [onePerEmail, setOnePerEmail] = useState(false);
   const [minTaxableBase, setMinTaxableBase] = useState("");
+  const [now] = useState(() => Date.now());
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formError, setFormError] = useState("");
+  const [formNotice, setFormNotice] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const formRef = useRef<HTMLElement>(null);
+
+  function resetForm() {
+    setEditingId(null);
+    setCode("");
+    setType("percentage");
+    setValue("");
+    setExpiresAt("");
+    setMaxUses("");
+    setOnePerEmail(false);
+    setMinTaxableBase("");
+  }
+
+  function startEdit(item: DiscountCode) {
+    setEditingId(item.id);
+    setCode(item.code);
+    setType(item.type);
+    setValue(String(item.value));
+    setExpiresAt(item.expires_at ? item.expires_at.slice(0, 10) : "");
+    setMaxUses(item.max_uses ? String(item.max_uses) : "");
+    setOnePerEmail(Boolean(item.one_per_email));
+    setMinTaxableBase(item.min_taxable_base ? String(item.min_taxable_base) : "");
+    setFormError("");
+    setFormNotice("");
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function cancelEdit() {
+    resetForm();
+    setFormError("");
+    setFormNotice("");
+  }
 
   async function submit() {
-    const created = await onCreate({
-      code,
-      type,
-      value: Number(value),
-      expiresAt,
-      maxUses: maxUses ? Number(maxUses) : undefined,
-      onePerEmail,
-      minTaxableBase: minTaxableBase ? Number(minTaxableBase) : undefined
-    });
+    setFormError("");
+    setFormNotice("");
+    setIsSaving(true);
 
-    if (created) {
-      setCode("");
-      setType("percentage");
-      setValue("");
-      setExpiresAt("");
-      setMaxUses("");
-      setOnePerEmail(false);
-      setMinTaxableBase("");
+    const error = editingId
+      ? await onUpdate(editingId, {
+          type,
+          value: Number(value),
+          expiresAt,
+          maxUses: maxUses ? Number(maxUses) : null,
+          onePerEmail,
+          minTaxableBase: minTaxableBase ? Number(minTaxableBase) : 0
+        })
+      : await onCreate({
+          code,
+          type,
+          value: Number(value),
+          expiresAt,
+          maxUses: maxUses ? Number(maxUses) : undefined,
+          onePerEmail,
+          minTaxableBase: minTaxableBase ? Number(minTaxableBase) : undefined
+        });
+
+    setIsSaving(false);
+    if (error) {
+      setFormError(error);
+      return;
     }
+    setFormNotice(editingId ? "Cambios guardados." : "Código creado.");
+    resetForm();
   }
 
   return (
     <div className="grid gap-7 xl:grid-cols-[360px_minmax(0,1fr)]">
-      <section className="border-t border-datum-line pt-5">
-        <h2 className="text-lg font-semibold">Nuevo código</h2>
+      <section className="scroll-mt-6 border-t border-datum-line pt-5" ref={formRef}>
+        <h2 className="text-lg font-semibold">{editingId ? `Editar ${code}` : "Nuevo código"}</h2>
         <div className="mt-5 space-y-4">
-          <label className="block"><span className="text-sm text-slate-300">Código</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3 uppercase" onChange={(event) => setCode(event.target.value)} placeholder="DATUM10" value={code} /></label>
+          <label className="block"><span className="text-sm text-slate-300">Código</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3 uppercase disabled:cursor-not-allowed disabled:opacity-60" disabled={Boolean(editingId)} onChange={(event) => setCode(event.target.value)} placeholder="DATUM10" value={code} /></label>
           <label className="block"><span className="text-sm text-slate-300">Tipo</span><select className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" onChange={(event) => setType(event.target.value as "percentage" | "fixed")} value={type}><option value="percentage">Porcentaje</option><option value="fixed">Importe fijo</option></select></label>
           <label className="block"><span className="text-sm text-slate-300">Valor</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" min="0" onChange={(event) => setValue(event.target.value)} placeholder={type === "percentage" ? "10" : "50"} type="number" value={value} /></label>
           <label className="block"><span className="text-sm text-slate-300">Válido hasta</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" onChange={(event) => setExpiresAt(event.target.value)} type="date" value={expiresAt} /></label>
           <label className="block"><span className="text-sm text-slate-300">Límite de usos</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" min="1" onChange={(event) => setMaxUses(event.target.value)} placeholder="Sin límite" type="number" value={maxUses} /></label>
           <label className="flex items-start gap-3 rounded border border-datum-line bg-white/[0.03] p-3 text-sm text-slate-200"><input checked={onePerEmail} className="mt-1 size-4" onChange={(event) => setOnePerEmail(event.target.checked)} type="checkbox" /><span><strong className="block text-white">1 uso por cliente</strong>El mismo email solo podrá usar este código una vez.</span></label>
           <label className="block"><span className="text-sm text-slate-300">Base mínima</span><input className="mt-2 w-full rounded border border-datum-line bg-white px-3 py-3" min="0" onChange={(event) => setMinTaxableBase(event.target.value)} placeholder="0" type="number" value={minTaxableBase} /></label>
-          <button className="w-full rounded bg-datum-cyan px-4 py-3 font-semibold text-datum-ink" onClick={submit} type="button">Crear código</button>
+          {formError ? <p className="rounded border border-red-400/50 bg-red-500/10 px-3 py-2 text-sm text-red-100" role="alert">{formError}</p> : null}
+          {formNotice ? <p className="rounded border border-cyan-400/40 bg-cyan-400/10 px-3 py-2 text-sm text-cyan-100" role="status">{formNotice}</p> : null}
+          <button className="w-full rounded bg-datum-cyan px-4 py-3 font-semibold text-datum-ink disabled:opacity-50" disabled={isSaving} onClick={submit} type="button">{isSaving ? "Guardando..." : editingId ? "Guardar cambios" : "Crear código"}</button>
+          {editingId ? <button className="w-full rounded border border-datum-line px-4 py-3 text-sm text-slate-300 hover:text-white" onClick={cancelEdit} type="button">Cancelar edición</button> : null}
         </div>
       </section>
 
@@ -943,21 +997,28 @@ function DiscountCodesView({
           <table className="w-full min-w-[840px] text-left text-sm">
             <thead className="text-xs uppercase text-slate-500"><tr><th className="py-4 pr-4">Código</th><th className="px-4 py-4">Descuento</th><th className="px-4 py-4">Uso</th><th className="px-4 py-4">Cliente</th><th className="px-4 py-4">Vence</th><th className="px-4 py-4">Estado</th><th className="py-4 pl-4 text-right">Acciones</th></tr></thead>
             <tbody className="divide-y divide-datum-line">
-              {discountCodes.map((item) => (
-                <tr key={item.id}>
+              {discountCodes.map((item) => {
+                const isExpired = Boolean(item.expires_at) && new Date(item.expires_at as string).getTime() < now;
+                const isExhausted = Boolean(item.max_uses) && item.times_used >= Number(item.max_uses);
+                const statusLabel = !item.active ? "Inactivo" : isExpired ? "Caducado" : isExhausted ? "Agotado" : "Activo";
+                const statusClass = !item.active ? "bg-rose-400/10 text-rose-200" : isExpired || isExhausted ? "bg-amber-400/15 text-amber-200" : "bg-cyan-400/15 text-cyan-200";
+                return (
+                <tr className={editingId === item.id ? "bg-cyan-400/5" : undefined} key={item.id}>
                   <td className="py-4 pr-4 font-semibold">{item.code}</td>
                   <td className="px-4 py-4 text-slate-300">{item.type === "percentage" ? `${item.value}%` : formatCurrency(Number(item.value))}</td>
                   <td className="px-4 py-4 text-slate-400">{item.times_used}{item.max_uses ? ` / ${item.max_uses}` : ""}</td>
                   <td className="px-4 py-4 text-slate-400">{item.one_per_email ? "1 por email" : "Sin límite"}</td>
                   <td className="px-4 py-4 text-slate-400">{item.expires_at ? formatShortDate(item.expires_at.slice(0, 10)) : "Sin vencimiento"}</td>
-                  <td className="px-4 py-4"><span className={`rounded px-2 py-1 text-xs ${item.active ? "bg-cyan-400/15 text-cyan-200" : "bg-rose-400/10 text-rose-200"}`}>{item.active ? "Activo" : "Inactivo"}</span></td>
+                  <td className="px-4 py-4"><span className={`rounded px-2 py-1 text-xs ${statusClass}`}>{statusLabel}</span></td>
                   <td className="py-4 pl-4 text-right">
+                    <button className="mr-4 font-semibold text-white" onClick={() => startEdit(item)} type="button">Editar</button>
                     <button className="mr-4 text-datum-cyan" onClick={() => onUpdate(item.id, { active: !item.active })} type="button">{item.active ? "Desactivar" : "Activar"}</button>
                     <button className="mr-4 text-slate-300" onClick={() => onUpdate(item.id, { one_per_email: !item.one_per_email })} type="button">{item.one_per_email ? "Permitir repetir" : "1 por email"}</button>
                     <button className="text-rose-200" onClick={() => onDelete(item.id)} type="button">Eliminar</button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
           {!discountCodes.length ? <Empty text="Todavía no hay códigos de descuento." /> : null}
