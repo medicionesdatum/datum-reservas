@@ -4,6 +4,7 @@ import Link from "next/link";
 import { GoogleReviews } from "@/components/GoogleReviews";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
+import { services } from "@/lib/pricing";
 import {
   absoluteUrl,
   faqItems,
@@ -126,6 +127,13 @@ const revit3dImages = [
     alt: "Vista isométrica de la planta sótano de un modelo 3D en Revit"
   }
 ] as const;
+
+// Los precios "desde" salen de lib/pricing.ts, la misma fuente que usa el asistente de reserva.
+const servicePriceKey = {
+  "point-cloud": "point_cloud",
+  "plans-2d": "plans_2d",
+  "revit-3d": "revit_3d"
+} as const;
 
 const serviceVideos: Record<string, string> = {
   "point-cloud": "nUV_rddYfdE",
@@ -255,6 +263,7 @@ export default function ServicesPage() {
                     <dl className="mt-7 space-y-4 border-t border-datum-line pt-6 text-sm">
                       <InfoLine label="Formatos" value={service.formats} />
                       <InfoLine label="Plazo" value={service.delivery} />
+                      <InfoLine label="Desde" value={`${services[servicePriceKey[service.id]].from} € + IVA`} />
                     </dl>
                     <p className="mt-6 text-sm leading-6 text-slate-400">{service.scope}</p>
                   </div>
@@ -262,6 +271,12 @@ export default function ServicesPage() {
                 </article>
               ))}
             </div>
+            <p className="mt-6 text-sm leading-6 text-slate-400">
+              Precios desde, sin IVA, para Madrid ciudad. El precio final depende de la superficie y se calcula al reservar. Para más de 400 m² o fuera de Madrid ciudad, escríbenos a{" "}
+              <a className="underline underline-offset-4 hover:text-datum-cyan" href={`mailto:${site.email}`}>
+                {site.email}
+              </a>
+            </p>
           </div>
         </section>
 
