@@ -60,4 +60,15 @@ describe("aboutPageJsonLd y servicesJsonLd", () => {
     expect(serialized).not.toContain("offers");
     expect(data["@graph"][0]["@id"]).toBe("https://medicionesdatum.es/servicios#point-cloud");
   });
+
+  it("con precios desde añade un Offer sin IVA por servicio", () => {
+    const prices = { "point-cloud": 200, "plans-2d": 350, "revit-3d": 700 };
+    const data = servicesJsonLd(serviceDetails, prices);
+    const offers = data["@graph"].map((service) => (service as { offers?: unknown }).offers) as {
+      priceSpecification: { minPrice: number; priceCurrency: string; valueAddedTaxIncluded: boolean };
+    }[];
+    expect(offers.map((offer) => offer.priceSpecification.minPrice)).toEqual([200, 350, 700]);
+    expect(offers.every((offer) => offer.priceSpecification.priceCurrency === "EUR")).toBe(true);
+    expect(offers.every((offer) => offer.priceSpecification.valueAddedTaxIncluded === false)).toBe(true);
+  });
 });
