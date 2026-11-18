@@ -63,7 +63,7 @@
   footer{margin-top:26px;text-align:center;color:var(--mut);font-size:12.5px;line-height:1.6}
   footer a{color:inherit}
 
-  /* Botón y pantalla de QR (solo para quien abre la tarjeta sin venir de un QR) */
+  /* Botón y pantalla de QR */
   .fab{
     position:fixed;right:16px;bottom:max(16px,env(safe-area-inset-bottom));z-index:5;
     display:flex;align-items:center;gap:8px;min-height:50px;padding:0 18px;border-radius:999px;
@@ -158,9 +158,9 @@
   </footer>
 </main>
 
-<button class="fab" id="qrOpen" type="button" aria-label="Mostrar mi código QR">
+<button class="fab" id="qrOpen" type="button" aria-label="Mostrar código QR">
   <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/></svg>
-  Mi QR
+  QR
 </button>
 
 <section class="qr-screen" id="qrScreen" role="dialog" aria-label="Código QR de la tarjeta">
@@ -178,9 +178,6 @@
 <script>
 (function(){
   var fab=document.getElementById('qrOpen'), scr=document.getElementById('qrScreen'), lock=null;
-  // Quien llega escaneando el QR (lleva utm_source) no ve el botón "Mi QR".
-  if(/[?&]utm_source=/.test(location.search)) fab.hidden=true;
-
   function wake(){ try{ if(navigator.wakeLock){ navigator.wakeLock.request('screen').then(function(l){lock=l}).catch(function(){}); } }catch(e){} }
   function open(){ scr.classList.add('open'); wake(); if(location.hash!=='#qr') history.replaceState(null,'','#qr'); }
   function close(){ scr.classList.remove('open'); if(lock){ try{lock.release()}catch(e){} lock=null; } if(location.hash==='#qr') history.replaceState(null,'',location.pathname+location.search); }
