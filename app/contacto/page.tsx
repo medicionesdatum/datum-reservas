@@ -42,7 +42,7 @@ export default function ContactPage() {
       <p>
         Tarjeta digital:
         {" "}
-        <a className="text-datum-cyan" href="/tarjeta?utm_source=contacto">
+        <a className="text-datum-cyan" href="/tarjeta">
           guardar el contacto de Daniel Escobar
         </a>
         {" "}
