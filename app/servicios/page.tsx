@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { BlogLinks } from "@/components/BlogLinks";
 import { GoogleReviews } from "@/components/GoogleReviews";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
@@ -386,6 +387,8 @@ export default function ServicesPage() {
             </div>
           </div>
         </section>
+
+        <BlogLinks />
 
         <GoogleReviews />
 
