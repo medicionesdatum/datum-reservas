@@ -40,6 +40,15 @@ export default function ContactPage() {
         </a>
       </p>
       <p>
+        Tarjeta digital:
+        {" "}
+        <a className="text-datum-cyan" href="/tarjeta?utm_source=contacto">
+          guardar el contacto de Daniel Escobar
+        </a>
+        {" "}
+        en tu móvil.
+      </p>
+      <p>
         Dirección: {site.address.streetAddress}, {site.address.addressLocality},
         {site.address.postalCode}. Horario de atención: lunes a jueves de 08:30
         a 17:00 y viernes de 08:30 a 14:00.
