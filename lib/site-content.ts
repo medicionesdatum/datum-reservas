@@ -1,6 +1,7 @@
 export const site = {
   name: "DATUM Mediciones",
-  legalName: "DOGROUP STUDIO SL.",
+  legalName: "DOGROUP STUDIO SL",
+  taxId: "B26992560",
   url: "https://medicionesdatum.es",
   description:
     "DATUM documenta la realidad exacta de inmuebles mediante escaneado láser 3D, nubes de puntos, planos 2D y modelos 3D precisos para proyectar, reformar, construir o analizar con una base técnica fiable.",

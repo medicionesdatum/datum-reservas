@@ -14,6 +14,11 @@ export default function PrivacyPage() {
   return (
     <PublicInfoPage eyebrow="Privacidad" title="Política de privacidad">
       <p>
+        Responsable del tratamiento: {site.legalName}, con CIF {site.taxId} y
+        domicilio en {site.address.streetAddress}, {site.address.postalCode}{" "}
+        {site.address.addressLocality}. Correo de contacto: {site.email}.
+      </p>
+      <p>
         Esta página resume cómo se tratan los datos facilitados a través de la
         plataforma de reservas de DATUM Mediciones. La información introducida
         por el cliente se utiliza para gestionar la solicitud, calcular el
@@ -59,6 +64,15 @@ export default function PrivacyPage() {
           la medición.
         </p>
       </section>
+      <p>
+        De conformidad con el Reglamento (UE) 2016/679, General de Protección de
+        Datos, y la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de
+        Datos Personales y garantía de los derechos digitales, puedes ejercer de
+        forma gratuita los derechos de acceso, información, rectificación,
+        supresión y olvido, limitación del tratamiento, oposición, portabilidad
+        y a no ser objeto de decisiones individuales automatizadas enviando un
+        correo a {site.email}.
+      </p>
       <p>
         El cliente puede contactar en {site.email} para consultar dudas sobre
         sus datos, corregir información de una reserva o solicitar información
