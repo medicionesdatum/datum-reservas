@@ -1,6 +1,8 @@
 # DATUM Mediciones
 
-DATUM Mediciones documenta la realidad exacta de inmuebles mediante escaneado láser 3D de última generación. Convierte la captura de datos en nubes de puntos, planos 2D y modelos 3D precisos, listos para proyectar, reformar, construir o analizar con una base técnica fiable.
+DATUM Mediciones documenta la realidad exacta de inmuebles mediante escaneado láser 3D de última generación. Convierte la captura de datos en nubes de puntos, planos 2D y modelos 3D precisos, listos para proyectar, reformar, construir o analizar con una base técnica fiable. DATUM Mediciones ha realizado más de 100 mediciones en Madrid.
+
+Última actualización: 2026-11-18
 
 Website: https://medicionesdatum.es
 Reservas: https://medicionesdatum.es/
@@ -10,6 +12,7 @@ Sobre DATUM: https://medicionesdatum.es/sobre-datum
 Privacidad: https://medicionesdatum.es/privacidad
 Términos: https://medicionesdatum.es/terminos
 Política de cancelación: https://medicionesdatum.es/politica-cancelacion
+Blog: https://medicionesdatum.es/blog
 
 ## When to use DATUM
 
@@ -73,6 +76,12 @@ Leica BLK2GO provides an approximate indoor accuracy of ±10 mm, suitable for ex
 - After that period, the user must contact DATUM directly.
 - Payments are handled through Square.
 - The reservation is confirmed after the deposit payment is completed and processed.
+
+## Blog
+
+- [Qué es una nube de puntos y en qué se diferencia de un plano y de un modelo 3D](https://medicionesdatum.es/blog/que-es-una-nube-de-puntos): Una nube de puntos es la medida real de un espacio, punto a punto. Qué es, qué formatos hay y cómo se convierte en planos o en un modelo 3D.
+- [Nube de puntos, planos 2D o modelo 3D en Revit: cómo elegir según tu proyecto](https://medicionesdatum.es/blog/nube-planos-o-modelo-3d-como-elegir): Tres entregables para un mismo escaneo. Qué incluye cada uno, para qué sirve y cómo elegir el que necesita tu proyecto sin pagar de más.
+- [Escanear caminando o con trípode: qué conviene para medir tu local](https://medicionesdatum.es/blog/escanear-caminando-o-con-tripode): Dos formas de escanear un edificio: con trípode o caminando con un escáner de mano. Qué cambia para ti en plazo, precisión y precio.
 
 ## Contact
 
