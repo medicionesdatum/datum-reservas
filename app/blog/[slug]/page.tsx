@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BlogContent } from "@/components/BlogContent";
+import { JsonLd } from "@/components/JsonLd";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { blogCoverStyle, getPublishedBlogPost } from "@/lib/blog";
 import { blogReadingMinutes } from "@/lib/blog-shared";
 import { absoluteUrl, site } from "@/lib/site-content";
+import { breadcrumbJsonLd } from "@/lib/structured-data";
 
 export const revalidate = 0;
 
@@ -65,6 +67,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   return (
     <div className="min-h-screen bg-[#06111f] text-white">
       <script dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} type="application/ld+json" />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Blog", path: "/blog" },
+          { name: post.title, path: `/blog/${post.slug}` }
+        ])}
+      />
       <SiteNavigation compact />
       <main>
         <article>

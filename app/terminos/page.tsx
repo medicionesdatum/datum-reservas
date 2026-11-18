@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <PublicInfoPage eyebrow="Condiciones" title="Términos y condiciones">
+    <PublicInfoPage eyebrow="Condiciones" path="/terminos" title="Términos y condiciones">
       <p>
         Titular de la plataforma: {site.legalName}, con CIF {site.taxId} y
         domicilio en {site.address.streetAddress}, {site.address.postalCode}{" "}

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <PublicInfoPage eyebrow="Privacidad" title="Política de privacidad">
+    <PublicInfoPage eyebrow="Privacidad" path="/privacidad" title="Política de privacidad">
       <p>
         Responsable del tratamiento: {site.legalName}, con CIF {site.taxId} y
         domicilio en {site.address.streetAddress}, {site.address.postalCode}{" "}
