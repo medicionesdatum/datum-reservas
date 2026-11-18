@@ -138,6 +138,10 @@ const servicePriceKey = {
   "revit-3d": "revit_3d"
 } as const;
 
+const servicePrices = Object.fromEntries(
+  serviceDetails.map((service) => [service.id, services[servicePriceKey[service.id]].from])
+);
+
 const serviceVideos: Record<string, string> = {
   "point-cloud": "nUV_rddYfdE",
   "plans-2d": "NjVsrpVgzJ4",
@@ -166,7 +170,7 @@ export default function ServicesPage() {
         }}
         type="application/ld+json"
       />
-      <JsonLd data={servicesJsonLd(serviceDetails)} />
+      <JsonLd data={servicesJsonLd(serviceDetails, servicePrices)} />
       <JsonLd data={breadcrumbJsonLd([{ name: "Servicios", path: "/servicios" }])} />
 
       <header className="border-b border-datum-line bg-datum-ink/90">

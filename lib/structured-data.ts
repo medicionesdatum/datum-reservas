@@ -50,20 +50,44 @@ export function aboutPageJsonLd(params: { path: string; name: string; descriptio
   };
 }
 
+/**
+ * `fromPrices` (opcional) es el precio "desde" sin IVA por id de servicio. Si se pasa,
+ * cada Service incluye un Offer con priceSpecification (importe mínimo, IVA no incluido).
+ */
 export function servicesJsonLd(
-  services: readonly { id: string; name: string; summary: string }[]
+  services: readonly { id: string; name: string; summary: string }[],
+  fromPrices?: Readonly<Record<string, number>>
 ) {
   return {
     "@context": "https://schema.org",
-    "@graph": services.map((service) => ({
-      "@type": "Service",
-      "@id": `${absoluteUrl("/servicios")}#${service.id}`,
-      url: `${absoluteUrl("/servicios")}#${service.id}`,
-      name: service.name,
-      serviceType: service.name,
-      description: service.summary,
-      provider: { "@id": organizationId },
-      areaServed: { "@type": "City", name: "Madrid" }
-    }))
+    "@graph": services.map((service) => {
+      const fromPrice = fromPrices?.[service.id];
+      return {
+        "@type": "Service",
+        "@id": `${absoluteUrl("/servicios")}#${service.id}`,
+        url: `${absoluteUrl("/servicios")}#${service.id}`,
+        name: service.name,
+        serviceType: service.name,
+        description: service.summary,
+        provider: { "@id": organizationId },
+        areaServed: { "@type": "City", name: "Madrid" },
+        ...(fromPrice === undefined
+          ? {}
+          : {
+              offers: {
+                "@type": "Offer",
+                url: absoluteUrl("/#reserva"),
+                priceCurrency: "EUR",
+                eligibleRegion: { "@type": "City", name: "Madrid" },
+                priceSpecification: {
+                  "@type": "PriceSpecification",
+                  minPrice: fromPrice,
+                  priceCurrency: "EUR",
+                  valueAddedTaxIncluded: false
+                }
+              }
+            })
+      };
+    })
   };
 }
