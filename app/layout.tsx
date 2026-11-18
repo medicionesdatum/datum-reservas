@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: "DATUM Mediciones | Reservas de medición láser 3D",
+    default: "DATUM Mediciones | Escaneado láser 3D y levantamientos en Madrid",
     template: "%s | DATUM Mediciones"
   },
   description: site.description,
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     }
   },
   openGraph: {
-    title: "DATUM Mediciones | Reservas de medición láser 3D",
+    title: "DATUM Mediciones | Escaneado láser 3D y levantamientos en Madrid",
     description: site.description,
     url: site.url,
     siteName: site.name,

@@ -13,14 +13,14 @@ import {
 } from "@/lib/site-content";
 
 export const metadata: Metadata = {
-  title: "Información y servicios de medición láser 3D",
+  title: "Servicios de escaneado láser 3D y levantamientos en Madrid",
   description:
     "Conoce los servicios de DATUM Mediciones, cómo realizamos cada levantamiento, los formatos de entrega, los plazos y las preguntas frecuentes.",
   alternates: {
     canonical: absoluteUrl("/servicios")
   },
   openGraph: {
-    title: "Información y servicios | DATUM Mediciones",
+    title: "Servicios de escaneado láser 3D y levantamientos en Madrid | DATUM Mediciones",
     description:
       "Nubes de puntos, planos 2D y modelos 3D Revit obtenidos mediante escaneado láser 3D en Madrid.",
     url: absoluteUrl("/servicios")
@@ -178,7 +178,7 @@ export default function ServicesPage() {
             <div className="mt-5 grid items-end gap-10 lg:grid-cols-[1.35fr_0.65fr]">
               <div>
                 <h1 className="max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl">
-                  Documentamos tu espacio para que proyectes sobre una base fiable.
+                  Escaneado láser 3D y levantamientos en Madrid: servicios de DATUM Mediciones
                 </h1>
                 <p className="mt-6 max-w-3xl text-base leading-8 text-slate-300 md:text-lg">
                   DATUM convierte espacios reales en datos precisos: nubes de puntos,
