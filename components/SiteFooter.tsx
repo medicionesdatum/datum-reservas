@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { site } from "@/lib/site-content";
 
 export function SiteFooter() {
   return (
@@ -131,6 +132,10 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-white/10 px-5 py-5 text-center text-xs text-slate-500">
         © {new Date().getFullYear()} DATUM Mediciones. Todos los derechos reservados.
+        <p className="mt-2">
+          Responsable del tratamiento: {site.legalName} · CIF {site.taxId} ·{" "}
+          {site.address.streetAddress}, {site.address.postalCode} {site.address.addressLocality}
+        </p>
       </div>
     </footer>
   );

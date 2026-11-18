@@ -15,6 +15,12 @@ export default function TermsPage() {
   return (
     <PublicInfoPage eyebrow="Condiciones" title="Términos y condiciones">
       <p>
+        Titular de la plataforma: {site.legalName}, con CIF {site.taxId} y
+        domicilio en {site.address.streetAddress}, {site.address.postalCode}{" "}
+        {site.address.addressLocality}, que opera bajo el nombre comercial DATUM
+        Mediciones. Correo de contacto: {site.email}.
+      </p>
+      <p>
         La plataforma de reservas de DATUM Mediciones permite solicitar servicios
         de medición láser 3D, seleccionar características del inmueble, elegir
         una fecha disponible y pagar un depósito para iniciar la coordinación de
