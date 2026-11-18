@@ -27,46 +27,56 @@ export const site = {
   ]
 } as const;
 
+// lastModified: fecha real del último cambio de contenido de cada página (se usa en sitemap.xml).
+// Actualízala cuando cambie el contenido de la página; /blog usa además la fecha del último artículo.
 export const publicPages = [
   {
     path: "/",
+    lastModified: "2026-11-18",
     title: "Reservas DATUM",
     description: "Cotización y reserva online de mediciones láser 3D."
   },
   {
     path: "/servicios",
+    lastModified: "2026-11-18",
     title: "Información y servicios",
     description:
       "Servicios, proceso, especificaciones técnicas y preguntas frecuentes de DATUM Mediciones."
   },
   {
     path: "/sobre-datum",
+    lastModified: "2026-11-18",
     title: "Sobre DATUM",
     description: "Qué es DATUM y cómo trabaja DATUM Mediciones."
   },
   {
     path: "/blog",
+    lastModified: "2026-10-27",
     title: "Blog",
     description:
       "Guías e innovación sobre escaneado láser 3D, nubes de puntos, planos 2D y modelos Revit."
   },
   {
     path: "/contacto",
+    lastModified: "2026-11-18",
     title: "Contacto",
     description: "Datos de contacto y atención de DATUM Mediciones."
   },
   {
     path: "/privacidad",
+    lastModified: "2026-11-18",
     title: "Privacidad",
     description: "Información básica sobre el tratamiento de datos personales."
   },
   {
     path: "/terminos",
+    lastModified: "2026-11-18",
     title: "Términos y condiciones",
     description: "Condiciones de uso de la plataforma de reservas."
   },
   {
     path: "/politica-cancelacion",
+    lastModified: "2026-10-22",
     title: "Política de cancelación",
     description: "Cambios de fecha, cancelaciones y coordinación de visitas."
   }

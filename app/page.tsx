@@ -1,4 +1,5 @@
 import BookingFlow from "@/components/BookingFlow";
+import { BlogLinks } from "@/components/BlogLinks";
 import { GoogleReviews } from "@/components/GoogleReviews";
 import { PlanosInfoBlocks } from "@/components/PlanosInfoBlocks";
 import { site, servicesForAgents } from "@/lib/site-content";
@@ -89,6 +90,7 @@ export default function Home() {
         reviews={
           <>
             <PlanosInfoBlocks />
+            <BlogLinks />
             <GoogleReviews />
           </>
         }
