@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthorized } from "@/lib/admin-auth";
-import { normalizeDiscountCode } from "@/lib/discount-codes";
+import { parseDiscountFields } from "@/lib/discount-codes";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isDemoModeEnabled } from "@/lib/runtime-config";
-
-function serializeDate(value: unknown) {
-  if (!value || typeof value !== "string") return null;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const date = new Date(`${value}T23:59:59+02:00`);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
-}
 
 export async function GET(request: Request) {
   if (!(await isAdminAuthorized(request))) {
@@ -37,37 +30,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const code = normalizeDiscountCode(body.code ?? "");
-  const type = body.type === "fixed" ? "fixed" : "percentage";
-  const value = Number(body.value);
-  const maxUses = body.maxUses ? Number(body.maxUses) : null;
-  const minTaxableBase = body.minTaxableBase ? Number(body.minTaxableBase) : 0;
-
-  if (!code) return NextResponse.json({ error: "Escribe un código." }, { status: 400 });
-  if (!Number.isFinite(value) || value <= 0) {
-    return NextResponse.json({ error: "Introduce un valor válido." }, { status: 400 });
-  }
-  if (type === "percentage" && value > 100) {
-    return NextResponse.json({ error: "El porcentaje no puede superar 100%." }, { status: 400 });
-  }
-  if (maxUses !== null && (!Number.isInteger(maxUses) || maxUses < 1)) {
-    return NextResponse.json({ error: "El máximo de usos no es válido." }, { status: 400 });
-  }
-  if (!Number.isFinite(minTaxableBase) || minTaxableBase < 0) {
-    return NextResponse.json({ error: "La compra mínima no es válida." }, { status: 400 });
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Los datos del código no son válidos." }, { status: 400 });
   }
 
-  const record = {
-    code,
-    type,
-    value,
-    active: body.active ?? true,
-    expires_at: serializeDate(body.expiresAt),
-    max_uses: maxUses,
-    one_per_email: Boolean(body.onePerEmail),
-    min_taxable_base: minTaxableBase
-  };
+  const parsed = parseDiscountFields(body as Record<string, unknown>, "create");
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const record = parsed.value;
 
   const supabase = getSupabaseAdmin();
   if (!supabase) {
@@ -96,20 +66,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const body = await request.json();
-  if (!body.id) return NextResponse.json({ error: "Falta el código." }, { status: 400 });
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || !body.id) {
+    return NextResponse.json({ error: "Falta el código." }, { status: 400 });
+  }
 
-  const update: Record<string, unknown> = {};
-  if (typeof body.active === "boolean") update.active = body.active;
-  if (body.expiresAt !== undefined) update.expires_at = serializeDate(body.expiresAt);
-  if (body.maxUses !== undefined) update.max_uses = body.maxUses ? Number(body.maxUses) : null;
-  if (typeof body.onePerEmail === "boolean") update.one_per_email = body.onePerEmail;
-  if (typeof body.one_per_email === "boolean") update.one_per_email = body.one_per_email;
-  if (update.max_uses !== null && update.max_uses !== undefined) {
-    const nextMaxUses = Number(update.max_uses);
-    if (!Number.isInteger(nextMaxUses) || nextMaxUses < 1) {
-      return NextResponse.json({ error: "El máximo de usos no es válido." }, { status: 400 });
-    }
+  const parsed = parseDiscountFields(body as Record<string, unknown>, "update");
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const update = parsed.value;
+  if (!Object.keys(update).length) {
+    return NextResponse.json({ error: "No hay cambios que guardar." }, { status: 400 });
   }
 
   const supabase = getSupabaseAdmin();
