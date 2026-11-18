@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { GoogleReviews } from "@/components/GoogleReviews";
+import { JsonLd } from "@/components/JsonLd";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { services } from "@/lib/pricing";
@@ -11,6 +12,7 @@ import {
   serviceDetails,
   site
 } from "@/lib/site-content";
+import { breadcrumbJsonLd, servicesJsonLd } from "@/lib/structured-data";
 
 export const metadata: Metadata = {
   title: "Servicios de escaneado láser 3D y levantamientos en Madrid",
@@ -163,6 +165,8 @@ export default function ServicesPage() {
         }}
         type="application/ld+json"
       />
+      <JsonLd data={servicesJsonLd(serviceDetails)} />
+      <JsonLd data={breadcrumbJsonLd([{ name: "Servicios", path: "/servicios" }])} />
 
       <header className="border-b border-datum-line bg-datum-ink/90">
         <SiteNavigation compact />

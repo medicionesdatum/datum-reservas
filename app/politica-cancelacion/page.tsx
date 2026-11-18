@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function CancellationPolicyPage() {
   return (
-    <PublicInfoPage eyebrow="Reservas" title="Política de cambio de fecha y cancelación">
+    <PublicInfoPage eyebrow="Reservas" path="/politica-cancelacion" title="Política de cambio de fecha y cancelación">
       <p>
         Las reservas de DATUM Mediciones se organizan con antelación para
         coordinar agenda, desplazamiento, equipo técnico y condiciones de acceso

@@ -2,6 +2,7 @@ import BookingFlow from "@/components/BookingFlow";
 import { GoogleReviews } from "@/components/GoogleReviews";
 import { PlanosInfoBlocks } from "@/components/PlanosInfoBlocks";
 import { site, servicesForAgents } from "@/lib/site-content";
+import { contactPointsJsonLd } from "@/lib/structured-data";
 
 export default function Home() {
   const organizationId = `${site.url}/#organization`;
@@ -25,6 +26,7 @@ export default function Home() {
         description: site.description,
         email: site.email,
         telephone: site.phones,
+        contactPoint: contactPointsJsonLd(),
         address: {
           "@type": "PostalAddress",
           streetAddress: site.address.streetAddress,

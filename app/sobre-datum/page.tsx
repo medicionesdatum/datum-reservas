@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PublicInfoPage } from "@/components/PublicInfoPage";
 import { absoluteUrl, site } from "@/lib/site-content";
+import { aboutPageJsonLd } from "@/lib/structured-data";
 
 export const metadata: Metadata = {
   title: "Sobre DATUM",
@@ -12,7 +13,16 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <PublicInfoPage eyebrow="Empresa" title="Sobre DATUM">
+    <PublicInfoPage
+      eyebrow="Empresa"
+      extraJsonLd={aboutPageJsonLd({
+        path: "/sobre-datum",
+        name: "Sobre DATUM",
+        description: metadata.description as string
+      })}
+      path="/sobre-datum"
+      title="Sobre DATUM"
+    >
       <p className="text-xl font-medium leading-8 text-slate-100 md:text-2xl md:leading-9">
         Medimos el edificio como está, no como dicen los planos antiguos.
       </p>

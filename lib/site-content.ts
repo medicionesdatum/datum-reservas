@@ -18,7 +18,8 @@ export const site = {
     "https://www.linkedin.com/company/medicionesdatum/",
     "https://www.instagram.com/datum.mediciones",
     "https://www.tiktok.com/@datum.mediciones",
-    "https://www.youtube.com/@datum.mediciones"
+    "https://www.youtube.com/@datum.mediciones",
+    "https://maps.app.goo.gl/TPdNU1ojywR3xpkq5"
   ],
   hours: [
     "Lunes a jueves: 08:30-17:00",

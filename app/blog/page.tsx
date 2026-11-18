@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { JsonLd } from "@/components/JsonLd";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { blogCoverStyle, getPublishedBlogPosts } from "@/lib/blog";
 import { blogReadingMinutes } from "@/lib/blog-shared";
 import { absoluteUrl } from "@/lib/site-content";
+import { breadcrumbJsonLd } from "@/lib/structured-data";
 
 export const revalidate = 0;
 
@@ -31,6 +33,7 @@ export default async function BlogPage() {
 
   return (
     <div className="min-h-screen bg-[#06111f] text-white">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Blog", path: "/blog" }])} />
       <SiteNavigation compact />
       <main>
         <header className="border-y border-datum-line bg-[#071523]">

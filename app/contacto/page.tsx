@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <PublicInfoPage eyebrow="Contacto" title="Contactar con DATUM">
+    <PublicInfoPage eyebrow="Contacto" path="/contacto" title="Contactar con DATUM">
       <p>
         Para consultas sobre mediciones láser 3D, nubes de puntos, planos 2D,
         modelos 3D Revit, reservas ya realizadas o solicitudes fuera de Madrid
