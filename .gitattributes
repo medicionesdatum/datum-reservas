@@ -1,0 +1,2 @@
+# La ficha de contacto debe conservar saltos de línea CRLF (norma vCard) y no normalizarse a LF.
+public/daniel-escobar.vcf -text
