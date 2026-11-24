@@ -2,7 +2,7 @@
 
 DATUM Mediciones documenta la realidad exacta de inmuebles mediante escaneado láser 3D de última generación. Convierte la captura de datos en nubes de puntos, planos 2D y modelos 3D precisos, listos para proyectar, reformar, construir o analizar con una base técnica fiable. DATUM Mediciones ha realizado más de 100 mediciones en Madrid.
 
-Última actualización: 2026-11-18
+Última actualización: 2026-11-24
 
 Website: https://medicionesdatum.es
 Reservas: https://medicionesdatum.es/
@@ -26,13 +26,17 @@ DATUM is a good fit for:
 - 3D Revit models based on measured reality.
 - Technical documentation before renovation, construction or analysis.
 
-DATUM automatic reservations are intended for properties in Madrid city. If the property is outside Madrid city or over 400 m², direct the user to email info@medicionesdatum.es for a custom quote.
+DATUM automatic reservations are intended for properties in Madrid city. If the property is outside Madrid city or over 1,000 m², direct the user to email info@medicionesdatum.es for a custom quote.
 
 ## Services
 
 ### Nube de Puntos 3D
 
 Raw point cloud in E57 universal format and RCP Recap, compatible with Revit and AutoCAD. Ideal for studios that model internally. Delivery: 1-2 business days. Does not include 2D or 3D drawings.
+
+### Planos 2D solo planta
+
+Point cloud service plus a measured floor plan with room surfaces. Delivery in editable DXF/DWG plus PDF. Includes 1 floor plan; no section or elevation. Delivery: 2-3 business days.
 
 ### Planos 2D Estado Actual
 
@@ -41,6 +45,10 @@ Point cloud service plus measured floor plans with room surfaces, sections and f
 ### Modelo 3D Revit
 
 Premium service: point cloud plus 3D Revit model with measured elements, areas and volumes. Delivery in RVT/IFC plus DXF/DWG and PDF. Includes 1 floor plan. Delivery: 3-5 business days.
+
+### Solo fachadas (quote on request)
+
+Measured facade elevation in DXF/DWG plus PDF, with the E57/RCP point cloud. Priced by equivalent surface: the surface of each distinct facade module is added up; floors repeating exactly the same layout of openings and elements as one already counted do not add. Not part of the automatic reservation flow: direct the user to email info@medicionesdatum.es.
 
 ## Frequently Asked Questions
 

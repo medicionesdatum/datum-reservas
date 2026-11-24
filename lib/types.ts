@@ -1,4 +1,4 @@
-export type ServiceId = "point_cloud" | "plans_2d" | "revit_3d";
+export type ServiceId = "point_cloud" | "plans_floor" | "plans_2d" | "revit_3d";
 
 export type RepresentationType =
   | "geometria_real"

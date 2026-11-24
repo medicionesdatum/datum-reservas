@@ -164,7 +164,7 @@ Desde `/admin`, el cliente puede:
 
 - Se aceptan reservas de lunes a viernes segun horarios configurados en `lib/availability.ts`.
 - No se permiten fechas pasadas.
-- Inmuebles de mas de 400 m2 requieren presupuesto personalizado.
+- Inmuebles de mas de 1.000 m2 requieren presupuesto personalizado.
 - El deposito es el 50% del total.
 - El IVA aplicado es 21%.
 - Los codigos se aplican antes del IVA.

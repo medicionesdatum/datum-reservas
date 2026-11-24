@@ -62,12 +62,12 @@ describe("aboutPageJsonLd y servicesJsonLd", () => {
   });
 
   it("con precios desde añade un Offer sin IVA por servicio", () => {
-    const prices = { "point-cloud": 200, "plans-2d": 350, "revit-3d": 700 };
+    const prices = { "point-cloud": 175, "plans-floor": 250, "plans-2d": 350, "revit-3d": 700 };
     const data = servicesJsonLd(serviceDetails, prices);
     const offers = data["@graph"].map((service) => (service as { offers?: unknown }).offers) as {
       priceSpecification: { minPrice: number; priceCurrency: string; valueAddedTaxIncluded: boolean };
     }[];
-    expect(offers.map((offer) => offer.priceSpecification.minPrice)).toEqual([200, 350, 700]);
+    expect(offers.map((offer) => offer.priceSpecification.minPrice)).toEqual([175, 250, 350, 700]);
     expect(offers.every((offer) => offer.priceSpecification.priceCurrency === "EUR")).toBe(true);
     expect(offers.every((offer) => offer.priceSpecification.valueAddedTaxIncluded === false)).toBe(true);
   });
