@@ -1,8 +1,9 @@
 import { isValidSlot } from "@/lib/availability";
 import { normalizePhoneNumber } from "@/lib/phone";
+import { MAX_BOOKABLE_SURFACE, MAX_BOOKABLE_SURFACE_LABEL } from "@/lib/pricing";
 import type { RepresentationType, ReservationInput, ServiceId } from "@/lib/types";
 
-const serviceIds = new Set<ServiceId>(["point_cloud", "plans_2d", "revit_3d"]);
+const serviceIds = new Set<ServiceId>(["point_cloud", "plans_floor", "plans_2d", "revit_3d"]);
 const representations = new Set<RepresentationType>([
   "geometria_real",
   "representacion_ortogonalizada"
@@ -60,7 +61,7 @@ export function parseReservationInput(value: unknown, now = Date.now()):
 
   if (!serviceIds.has(serviceId)) return { data: null, error: "Selecciona un servicio válido." };
   if (!Number.isFinite(surface) || surface <= 0) return { data: null, error: "Introduce una superficie válida." };
-  if (surface > 400) return { data: null, error: "Los inmuebles de más de 400 m² requieren un presupuesto personalizado." };
+  if (surface > MAX_BOOKABLE_SURFACE) return { data: null, error: `Los inmuebles de más de ${MAX_BOOKABLE_SURFACE_LABEL} m² requieren un presupuesto personalizado.` };
   if (!representations.has(representation)) return { data: null, error: "Selecciona una representación válida." };
   if (additionalPlans === null || additionalSections === null || additionalElevations === null) {
     return { data: null, error: "Las cantidades adicionales no son válidas." };

@@ -41,7 +41,7 @@ ${serviceList}
 - Reservas automáticas solo para Madrid ciudad.
 - Reserva mínima con 24 horas de anticipación.
 - Cambios de fecha o cancelaciones hasta 48 horas antes de la cita.
-- Para inmuebles fuera de Madrid ciudad o superiores a 400 m², contactar por correo.
+- Para inmuebles fuera de Madrid ciudad o superiores a 1.000 m², contactar por correo.
 
 ${commonFooter}`
     };

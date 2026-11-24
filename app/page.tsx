@@ -104,9 +104,9 @@ export default function Home() {
           completar datos de contacto y pagar un depósito mediante Square.
         </p>
         <p>
-          Los servicios disponibles son Nube de Puntos 3D, Planos 2D Estado
-          Actual y Modelo 3D Revit. Para inmuebles fuera de Madrid ciudad o
-          superficies superiores a 400 m², el usuario debe contactar con DATUM
+          Los servicios disponibles son Nube de Puntos 3D, Planos 2D solo planta,
+          Planos 2D Estado Actual y Modelo 3D Revit. Para inmuebles fuera de
+          Madrid ciudad o superficies superiores a 1.000 m², el usuario debe contactar con DATUM
           para recibir una propuesta personalizada.
         </p>
       </section>

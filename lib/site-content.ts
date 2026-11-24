@@ -32,20 +32,20 @@ export const site = {
 export const publicPages = [
   {
     path: "/",
-    lastModified: "2026-11-18",
+    lastModified: "2026-11-24",
     title: "Reservas DATUM",
     description: "Cotización y reserva online de mediciones láser 3D."
   },
   {
     path: "/servicios",
-    lastModified: "2026-11-18",
+    lastModified: "2026-11-24",
     title: "Información y servicios",
     description:
       "Servicios, proceso, especificaciones técnicas y preguntas frecuentes de DATUM Mediciones."
   },
   {
     path: "/sobre-datum",
-    lastModified: "2026-11-18",
+    lastModified: "2026-11-24",
     title: "Sobre DATUM",
     description: "Qué es DATUM y cómo trabaja DATUM Mediciones."
   },
@@ -90,6 +90,12 @@ export const servicesForAgents = [
     delivery: "1-2 días hábiles"
   },
   {
+    name: "Planos 2D solo planta",
+    summary:
+      "Nube de puntos E57 y RCP y planta acotada con superficies por estancia. Entrega en DXF/DWG editable y PDF. No incluye sección ni alzado.",
+    delivery: "2-3 días hábiles"
+  },
+  {
     name: "Planos 2D Estado Actual",
     summary:
       "Nube de puntos E57 y RCP, plantas acotadas con superficies por estancia, secciones y alzados. Entrega en DXF/DWG editable y PDF.",
@@ -113,6 +119,16 @@ export const serviceDetails = [
     delivery: "1-2 días hábiles",
     scope:
       "Incluye el registro y procesado de la captura. No incluye planos 2D ni modelo 3D."
+  },
+  {
+    id: "plans-floor",
+    name: "Planos 2D solo planta",
+    summary:
+      "Delineamos la planta acotada con superficies por estancia, en DXF/DWG editable y PDF, junto con la nube de puntos. Es la opción adecuada cuando solo necesitas la planta del estado actual.",
+    formats: "E57 · RCP · DXF/DWG · PDF",
+    delivery: "2-3 días hábiles",
+    scope:
+      "Incluye la nube de puntos y una planta acotada con superficies por estancia. No incluye sección ni alzado. Se pueden añadir plantas adicionales durante la reserva."
   },
   {
     id: "plans-2d",

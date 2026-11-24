@@ -82,7 +82,7 @@ export default function AboutPage() {
         El modelo 3D Revit incluye los elementos constructivos visibles para el
         escáner; no incluye instalaciones empotradas ni elementos ocultos. La
         reserva online está pensada para inmuebles dentro de Madrid ciudad. Si
-        el inmueble está fuera o supera los 400 m², revisamos el caso de forma
+        el inmueble está fuera o supera los 1.000 m², revisamos el caso de forma
         personalizada.
       </p>
       <p>

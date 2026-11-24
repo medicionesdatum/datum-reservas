@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { getBookableSlots, isPastDate, nextBusinessDate } from "@/lib/availability";
 import { normalizePhoneNumber } from "@/lib/phone";
-import { calculateQuote, formatCurrency, services } from "@/lib/pricing";
+import { calculateQuote, formatCurrency, MAX_BOOKABLE_SURFACE, MAX_BOOKABLE_SURFACE_LABEL, services } from "@/lib/pricing";
 import type { Discount, RepresentationType, ReservationInput, ServiceId } from "@/lib/types";
 
 const steps = [
@@ -191,7 +191,7 @@ export default function BookingFlow({ reviews }: { reviews?: ReactNode }) {
             additionalElevations: 0
           }
         : {}),
-      ...(serviceId === "revit_3d"
+      ...(serviceId === "revit_3d" || serviceId === "plans_floor"
         ? {
             additionalSections: 0,
             additionalElevations: 0
@@ -209,8 +209,8 @@ export default function BookingFlow({ reviews }: { reviews?: ReactNode }) {
       return "Introduce una superficie válida.";
     }
 
-    if (currentStep === "features" && form.surface > 400) {
-      return "Para inmuebles superiores a 400 m², el presupuesto se realiza de forma personalizada.";
+    if (currentStep === "features" && form.surface > MAX_BOOKABLE_SURFACE) {
+      return `Para inmuebles superiores a ${MAX_BOOKABLE_SURFACE_LABEL} m², el presupuesto se realiza de forma personalizada.`;
     }
 
     if (currentStep === "representation" && !form.representation) {
@@ -531,7 +531,7 @@ function StepServices({
   return (
     <section>
       <h2 className="text-2xl font-semibold">Elige tu servicio</h2>
-      <div className="mt-5 grid gap-4 md:grid-cols-3">
+      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {Object.entries(services).map(([id, service]) => (
           <button
             className={`rounded-lg border p-5 text-left transition ${
@@ -614,7 +614,7 @@ function StepFeatures({
         <div className="mt-5 rounded border border-datum-cyan bg-datum-cyan/10 p-5">
           <p className="font-semibold text-white">Presupuesto personalizado</p>
           <p className="mt-2 text-slate-200">
-            Para inmuebles superiores a 400 m², el presupuesto se realizará de
+            Para inmuebles superiores a {MAX_BOOKABLE_SURFACE_LABEL} m², el presupuesto se realizará de
             forma personalizada. Contáctanos en info@medicionesdatum.es.
           </p>
         </div>

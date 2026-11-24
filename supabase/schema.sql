@@ -17,7 +17,7 @@ create table if not exists public.reservations (
   billing_city text,
   surface numeric not null,
   property_floors integer not null,
-  service_id text not null check (service_id in ('point_cloud', 'plans_2d', 'revit_3d')),
+  service_id text not null check (service_id in ('point_cloud', 'plans_floor', 'plans_2d', 'revit_3d')),
   range_label text not null,
   base_price numeric not null,
   additional_plans integer not null default 0,

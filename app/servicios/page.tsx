@@ -6,7 +6,7 @@ import { GoogleReviews } from "@/components/GoogleReviews";
 import { JsonLd } from "@/components/JsonLd";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
-import { services } from "@/lib/pricing";
+import { getPriceRange, MAX_BOOKABLE_SURFACE_LABEL, priceRanges, services } from "@/lib/pricing";
 import {
   absoluteUrl,
   faqItems,
@@ -43,6 +43,10 @@ const serviceGuide = [
   {
     need: "Tu equipo modela internamente y solo necesita los datos capturados",
     service: "Nube de Puntos 3D"
+  },
+  {
+    need: "Solo quieres el plano de planta de tu inmueble: ideal para inmobiliarias, empresas de reforma o particulares",
+    service: "Planos 2D solo planta"
   },
   {
     need: "Necesitas planos del estado actual para un proyecto, licencia o reforma",
@@ -134,6 +138,7 @@ const revit3dImages = [
 // Los precios "desde" salen de lib/pricing.ts, la misma fuente que usa el asistente de reserva.
 const servicePriceKey = {
   "point-cloud": "point_cloud",
+  "plans-floor": "plans_floor",
   "plans-2d": "plans_2d",
   "revit-3d": "revit_3d"
 } as const;
@@ -142,8 +147,20 @@ const servicePrices = Object.fromEntries(
   serviceDetails.map((service) => [service.id, services[servicePriceKey[service.id]].from])
 );
 
+const euros = new Intl.NumberFormat("es-ES", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+  useGrouping: "always"
+});
+
+function facadePrice(equivalentSurface: number) {
+  return getPriceRange(equivalentSurface)?.prices.plans_floor ?? 0;
+}
+
 const serviceVideos: Record<string, string> = {
   "point-cloud": "nUV_rddYfdE",
+  "plans-floor": "NjVsrpVgzJ4",
   "plans-2d": "NjVsrpVgzJ4",
   "revit-3d": "vVh1I9OCEso"
 };
@@ -257,7 +274,9 @@ export default function ServicesPage() {
             <div className="mt-12 space-y-8">
               {serviceDetails.map((service, index) => (
                 <article
-                  className="grid overflow-hidden rounded-xl border border-datum-line bg-datum-ink/70 lg:grid-cols-[0.9fr_1.1fr]"
+                  className={`grid overflow-hidden rounded-xl border border-datum-line bg-datum-ink/70 ${
+                    serviceVideos[service.id] ? "lg:grid-cols-[0.9fr_1.1fr]" : ""
+                  }`}
                   id={service.id}
                   key={service.id}
                 >
@@ -276,16 +295,74 @@ export default function ServicesPage() {
                     </dl>
                     <p className="mt-6 text-sm leading-6 text-slate-400">{service.scope}</p>
                   </div>
-                  <ServiceMedia serviceId={service.id} serviceName={service.name} />
+                  {serviceVideos[service.id] ? (
+                    <ServiceMedia serviceId={service.id} serviceName={service.name} />
+                  ) : null}
                 </article>
               ))}
             </div>
             <p className="mt-6 text-sm leading-6 text-slate-400">
-              Precios desde, sin IVA, para Madrid ciudad. El precio final depende de la superficie y se calcula al reservar. Para más de 400 m² o fuera de Madrid ciudad, escríbenos a{" "}
+              Precios desde, sin IVA, para Madrid ciudad. El precio final depende de la superficie y se calcula al reservar. Para más de {MAX_BOOKABLE_SURFACE_LABEL} m² o fuera de Madrid ciudad, escríbenos a{" "}
               <a className="underline underline-offset-4 hover:text-datum-cyan" href={`mailto:${site.email}`}>
                 {site.email}
               </a>
             </p>
+
+            <section
+              aria-labelledby="solo-fachadas-titulo"
+              className="mt-12 rounded-xl border border-datum-line bg-datum-ink/70 p-6 md:p-8 lg:p-10"
+              id="solo-fachadas"
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-datum-cyan">
+                Presupuesto bajo consulta
+              </p>
+              <h3 className="mt-3 text-2xl font-semibold text-white md:text-3xl" id="solo-fachadas-titulo">
+                Solo fachadas
+              </h3>
+              <p className="mt-5 max-w-3xl leading-7 text-slate-300">
+                Alzado acotado de fachada en DXF/DWG y PDF, junto con la nube de puntos E57/RCP.
+                El precio se calcula por superficie equivalente: se suma la superficie de cada
+                módulo de fachada distinto (planta baja, primera, segunda…). Las plantas que
+                repiten exactamente el mismo despiece de huecos y elementos que otra ya contada
+                no suman. Si se levantan varias fachadas, se suman los módulos distintos de cada una.
+              </p>
+              <p className="mt-4 max-w-3xl rounded border border-datum-line bg-white/[0.03] p-4 text-sm leading-6 text-slate-300">
+                Ejemplo: planta baja 50 m² + primera 50 m² + segunda 50 m² (las plantas superiores
+                iguales a la segunda no suman) = 150 m² equivalentes, tramo 101-150 m²:{" "}
+                <span className="font-semibold text-white">
+                  {euros.format(facadePrice(150))} + IVA
+                </span>
+                .
+              </p>
+              <div className="mt-6 overflow-x-auto rounded-lg border border-datum-line">
+                <table className="w-full min-w-[420px] border-collapse text-left text-sm">
+                  <caption className="sr-only">Precio de Solo fachadas por superficie equivalente, sin IVA</caption>
+                  <thead className="bg-datum-panel text-slate-200">
+                    <tr>
+                      <th className="px-5 py-3 font-semibold" scope="col">Superficie equivalente</th>
+                      <th className="px-5 py-3 font-semibold" scope="col">Precio (sin IVA)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-datum-line bg-white/[0.025] text-slate-300">
+                    {priceRanges.map((range) => (
+                      <tr key={range.label}>
+                        <td className="px-5 py-3">{range.label}</td>
+                        <td className="px-5 py-3 font-semibold text-white">{euros.format(range.prices.plans_floor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-400">
+                Desde {euros.format(services.plans_floor.from)} + IVA. Más de {MAX_BOOKABLE_SURFACE_LABEL} m² o fuera de Madrid ciudad: presupuesto a medida.
+              </p>
+              <a
+                className="mt-6 inline-flex rounded bg-datum-cyan px-6 py-3 font-semibold text-datum-ink transition hover:bg-cyan-200"
+                href={`mailto:${site.email}?subject=Solicitud%20de%20presupuesto%20Solo%20fachadas`}
+              >
+                Solicitar presupuesto
+              </a>
+            </section>
           </div>
         </section>
 
@@ -314,7 +391,7 @@ export default function ServicesPage() {
               title="¿Qué servicio te conviene?"
               body="Elige según el uso que dará tu equipo a la información después de la visita."
             />
-            <div className="mt-10 grid gap-4 lg:grid-cols-3">
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {serviceGuide.map((item) => (
                 <article className="rounded-xl border border-datum-line bg-datum-panel/65 p-6" key={item.service}>
                   <p className="text-sm leading-6 text-slate-400">Si necesitas...</p>
@@ -341,6 +418,7 @@ export default function ServicesPage() {
                 </thead>
                 <tbody className="divide-y divide-datum-line bg-white/[0.025] text-slate-300">
                   <SpecRow service="Nube de Puntos 3D" technology="PinPoint" formats="E57 / RCP" delivery="1-2 días hábiles" />
+                  <SpecRow service="Planos 2D solo planta" technology="ZWCAD" formats="E57 / RCP / DXF-DWG / PDF" delivery="2-3 días hábiles" />
                   <SpecRow service="Planos 2D Estado Actual" technology="ZWCAD" formats="E57 / RCP / DXF-DWG / PDF" delivery="2-3 días hábiles" />
                   <SpecRow service="Modelo 3D Revit" technology="Revit" formats="E57 / RCP / RVT-IFC / DXF-DWG / PDF" delivery="3-5 días hábiles" />
                 </tbody>
@@ -478,13 +556,13 @@ function ServiceMedia({
   const serviceImages =
     serviceId === "point-cloud"
       ? pointCloudImages
-      : serviceId === "plans-2d"
+      : serviceId === "plans-2d" || serviceId === "plans-floor"
         ? plans2dImages
         : serviceId === "revit-3d"
           ? revit3dImages
           : null;
   const hasGallery = serviceImages !== null;
-  const isPlans2dGallery = serviceId === "plans-2d";
+  const isPlans2dGallery = serviceId === "plans-2d" || serviceId === "plans-floor";
   const isRevit3dGallery = serviceId === "revit-3d";
   const videoId = serviceVideos[serviceId];
 
