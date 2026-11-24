@@ -57,7 +57,7 @@ export function SiteFooter() {
             </p>
             <p>
               <strong className="block text-white">Viernes</strong>
-              08:30 - 14:00
+              08:30 - 14:30
             </p>
           </div>
         </div>

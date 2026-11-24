@@ -52,7 +52,7 @@ export default function Home() {
             "@type": "OpeningHoursSpecification",
             dayOfWeek: "Friday",
             opens: "08:30",
-            closes: "14:00"
+            closes: "14:30"
           }
         ],
         makesOffer: servicesForAgents.map((service) => ({
