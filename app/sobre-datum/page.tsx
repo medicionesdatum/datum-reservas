@@ -88,7 +88,7 @@ export default function AboutPage() {
       <p>
         Los datos de contacto oficiales son {site.email}, {site.phones[0]} y
         {site.phones[1]}. La atención se realiza de lunes a jueves de 08:30 a
-        17:00 y los viernes de 08:30 a 14:00.
+        17:00 y los viernes de 08:30 a 14:30.
       </p>
     </PublicInfoPage>
   );

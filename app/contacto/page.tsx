@@ -51,7 +51,7 @@ export default function ContactPage() {
       <p>
         Dirección: {site.address.streetAddress}, {site.address.addressLocality},
         {site.address.postalCode}. Horario de atención: lunes a jueves de 08:30
-        a 17:00 y viernes de 08:30 a 14:00.
+        a 17:00 y viernes de 08:30 a 14:30.
       </p>
       <p>
         En una solicitud fuera del flujo estándar conviene indicar dirección,

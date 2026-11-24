@@ -23,7 +23,7 @@ export const site = {
   ],
   hours: [
     "Lunes a jueves: 08:30-17:00",
-    "Viernes: 08:30-14:00"
+    "Viernes: 08:30-14:30"
   ]
 } as const;
 
@@ -58,7 +58,7 @@ export const publicPages = [
   },
   {
     path: "/contacto",
-    lastModified: "2026-11-18",
+    lastModified: "2026-11-24",
     title: "Contacto",
     description: "Datos de contacto y atención de DATUM Mediciones."
   },
