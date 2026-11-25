@@ -28,6 +28,12 @@ describe("tarifa de cliente", () => {
     expect(services.plans_floor.from).toBe(250);
   });
 
+  it("Solo fachadas tiene columna propia con la tarifa publicada", () => {
+    expect(priceRanges.map((r) => r.prices.facades)).toEqual([
+      250, 300, 375, 450, 550, 650, 725, 800, 875, 950, 1025, 1100
+    ]);
+  });
+
   it("2D y 3D hasta 400 m² mantienen los precios anteriores", () => {
     const expected2d = [350, 400, 475, 550, 650, 750];
     const expected3d = [700, 800, 950, 1100, 1300, 1500];
@@ -41,8 +47,8 @@ describe("tarifa de cliente", () => {
     expect(base("plans_floor", 50)).toBe(250);
     expect(base("plans_2d", 600)).toBe(900);
     expect(base("revit_3d", 1000)).toBe(2400);
-    // Solo fachadas: superficie equivalente 150 m² con la columna "solo planta".
-    expect(getPriceRange(150)?.prices.plans_floor).toBe(375);
+    // Solo fachadas: superficie equivalente 150 m², columna propia de fachadas.
+    expect(getPriceRange(150)?.prices.facades).toBe(375);
   });
 
   it("calcula IVA y depósito del 50 % en cada tramo", () => {

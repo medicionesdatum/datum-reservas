@@ -10,90 +10,92 @@ export const MAX_BOOKABLE_SURFACE_LABEL = "1.000";
 /**
  * Tarifa de cliente (Madrid ciudad, sin IVA). Única fuente de precios de la web:
  * asistente de reserva, importes de Square, /servicios y datos estructurados.
+ * `facades` (Solo fachadas, por superficie equivalente) es una columna propia: no es un servicio
+ * reservable y se puede cambiar sin afectar a `plans_floor`.
  */
 export const priceRanges = [
   {
     min: 0,
     max: 50,
     label: "Hasta 50 m²",
-    prices: { point_cloud: 175, plans_floor: 250, plans_2d: 350, revit_3d: 700 },
+    prices: { point_cloud: 175, plans_floor: 250, facades: 250, plans_2d: 350, revit_3d: 700 },
     additional: 50
   },
   {
     min: 51,
     max: 100,
     label: "51-100 m²",
-    prices: { point_cloud: 225, plans_floor: 300, plans_2d: 400, revit_3d: 800 },
+    prices: { point_cloud: 225, plans_floor: 300, facades: 300, plans_2d: 400, revit_3d: 800 },
     additional: 50
   },
   {
     min: 101,
     max: 150,
     label: "101-150 m²",
-    prices: { point_cloud: 275, plans_floor: 375, plans_2d: 475, revit_3d: 950 },
+    prices: { point_cloud: 275, plans_floor: 375, facades: 375, plans_2d: 475, revit_3d: 950 },
     additional: 75
   },
   {
     min: 151,
     max: 200,
     label: "151-200 m²",
-    prices: { point_cloud: 325, plans_floor: 450, plans_2d: 550, revit_3d: 1100 },
+    prices: { point_cloud: 325, plans_floor: 450, facades: 450, plans_2d: 550, revit_3d: 1100 },
     additional: 75
   },
   {
     min: 201,
     max: 300,
     label: "201-300 m²",
-    prices: { point_cloud: 400, plans_floor: 550, plans_2d: 650, revit_3d: 1300 },
+    prices: { point_cloud: 400, plans_floor: 550, facades: 550, plans_2d: 650, revit_3d: 1300 },
     additional: 100
   },
   {
     min: 301,
     max: 400,
     label: "301-400 m²",
-    prices: { point_cloud: 475, plans_floor: 650, plans_2d: 750, revit_3d: 1500 },
+    prices: { point_cloud: 475, plans_floor: 650, facades: 650, plans_2d: 750, revit_3d: 1500 },
     additional: 100
   },
   {
     min: 401,
     max: 500,
     label: "401-500 m²",
-    prices: { point_cloud: 525, plans_floor: 725, plans_2d: 825, revit_3d: 1650 },
+    prices: { point_cloud: 525, plans_floor: 725, facades: 725, plans_2d: 825, revit_3d: 1650 },
     additional: 100
   },
   {
     min: 501,
     max: 600,
     label: "501-600 m²",
-    prices: { point_cloud: 575, plans_floor: 800, plans_2d: 900, revit_3d: 1800 },
+    prices: { point_cloud: 575, plans_floor: 800, facades: 800, plans_2d: 900, revit_3d: 1800 },
     additional: 100
   },
   {
     min: 601,
     max: 700,
     label: "601-700 m²",
-    prices: { point_cloud: 625, plans_floor: 875, plans_2d: 975, revit_3d: 1950 },
+    prices: { point_cloud: 625, plans_floor: 875, facades: 875, plans_2d: 975, revit_3d: 1950 },
     additional: 100
   },
   {
     min: 701,
     max: 800,
     label: "701-800 m²",
-    prices: { point_cloud: 675, plans_floor: 950, plans_2d: 1050, revit_3d: 2100 },
+    prices: { point_cloud: 675, plans_floor: 950, facades: 950, plans_2d: 1050, revit_3d: 2100 },
     additional: 100
   },
   {
     min: 801,
     max: 900,
     label: "801-900 m²",
-    prices: { point_cloud: 725, plans_floor: 1025, plans_2d: 1125, revit_3d: 2250 },
+    prices: { point_cloud: 725, plans_floor: 1025, facades: 1025, plans_2d: 1125, revit_3d: 2250 },
     additional: 100
   },
   {
     min: 901,
     max: 1000,
     label: "901-1.000 m²",
-    prices: { point_cloud: 775, plans_floor: 1100, plans_2d: 1200, revit_3d: 2400 },
+    prices: { point_cloud: 775, plans_floor: 1100, facades: 1100, plans_2d: 1200, revit_3d: 2400 },
     additional: 100
   }
 ] as const;
