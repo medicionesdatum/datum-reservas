@@ -6,7 +6,7 @@ import { GoogleReviews } from "@/components/GoogleReviews";
 import { JsonLd } from "@/components/JsonLd";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNavigation } from "@/components/SiteNavigation";
-import { getPriceRange, MAX_BOOKABLE_SURFACE_LABEL, priceRanges, services } from "@/lib/pricing";
+import { MAX_BOOKABLE_SURFACE_LABEL, services } from "@/lib/pricing";
 import {
   absoluteUrl,
   faqItems,
@@ -146,6 +146,7 @@ const revit3dImages = [
 const servicePriceKey = {
   "point-cloud": "point_cloud",
   "plans-floor": "plans_floor",
+  facades: "facades",
   "plans-2d": "plans_2d",
   "revit-3d": "revit_3d"
 } as const;
@@ -154,20 +155,10 @@ const servicePrices = Object.fromEntries(
   serviceDetails.map((service) => [service.id, services[servicePriceKey[service.id]].from])
 );
 
-const euros = new Intl.NumberFormat("es-ES", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 0,
-  useGrouping: "always"
-});
-
-function facadePrice(equivalentSurface: number) {
-  return getPriceRange(equivalentSurface)?.prices.facades ?? 0;
-}
-
 const serviceVideos: Record<string, string> = {
   "point-cloud": "nUV_rddYfdE",
   "plans-floor": "NjVsrpVgzJ4",
+  facades: "NjVsrpVgzJ4",
   "plans-2d": "NjVsrpVgzJ4",
   "revit-3d": "vVh1I9OCEso"
 };
@@ -324,86 +315,6 @@ export default function ServicesPage() {
                 Cómo trabajamos
               </Link>
             </p>
-
-            <section
-              aria-labelledby="solo-fachadas-titulo"
-              className="mt-12 rounded-xl border border-datum-line bg-datum-ink/70 p-6 md:p-8 lg:p-10"
-              id="solo-fachadas"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-datum-cyan">
-                Reserva online
-              </p>
-              <h3 className="mt-3 text-2xl font-semibold text-white md:text-3xl" id="solo-fachadas-titulo">
-                Solo fachadas
-              </h3>
-              <p className="mt-5 max-w-3xl leading-7 text-slate-300">
-                Alzado acotado de fachada en DXF/DWG y PDF, junto con la nube de puntos E57/RCP.
-                El precio se calcula por superficie equivalente: se suma la superficie de cada
-                módulo de fachada distinto (planta baja, primera, segunda…). Las plantas que
-                repiten exactamente el mismo despiece de huecos y elementos que otra ya contada
-                no suman. Si se levantan varias fachadas, se suman los módulos distintos de cada una.
-              </p>
-              <p className="mt-4 max-w-3xl rounded border border-datum-line bg-white/[0.03] p-4 text-sm leading-6 text-slate-300">
-                Ejemplo: planta baja 50 m² + primera 50 m² + segunda 50 m² (las plantas superiores
-                iguales a la segunda no suman) = 150 m² equivalentes, tramo 101-150 m²:{" "}
-                <span className="font-semibold text-white">
-                  {euros.format(facadePrice(150))} + IVA
-                </span>
-                .
-              </p>
-              <div className="mt-6 grid gap-3 md:grid-cols-2">
-                {facadeImages.map((image) => (
-                  <figure
-                    className="relative aspect-video overflow-hidden rounded-lg border border-datum-line bg-white"
-                    key={image.src}
-                  >
-                    <Image
-                      alt={image.alt}
-                      className="object-contain"
-                      fill
-                      sizes="(max-width: 767px) calc(100vw - 72px), 50vw"
-                      src={image.src}
-                    />
-                  </figure>
-                ))}
-              </div>
-              <div className="mt-6 overflow-x-auto rounded-lg border border-datum-line">
-                <table className="w-full min-w-[420px] border-collapse text-left text-sm">
-                  <caption className="sr-only">Precio de Solo fachadas por superficie equivalente, sin IVA</caption>
-                  <thead className="bg-datum-panel text-slate-200">
-                    <tr>
-                      <th className="px-5 py-3 font-semibold" scope="col">Superficie equivalente</th>
-                      <th className="px-5 py-3 font-semibold" scope="col">Precio (sin IVA)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-datum-line bg-white/[0.025] text-slate-300">
-                    {priceRanges.map((range) => (
-                      <tr key={range.label}>
-                        <td className="px-5 py-3">{range.label}</td>
-                        <td className="px-5 py-3 font-semibold text-white">{euros.format(range.prices.facades)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-slate-400">
-                Desde {euros.format(priceRanges[0].prices.facades)} + IVA. Más de {MAX_BOOKABLE_SURFACE_LABEL} m² o fuera de Madrid ciudad: presupuesto a medida.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link
-                  className="inline-flex rounded bg-datum-cyan px-6 py-3 font-semibold text-datum-ink transition hover:bg-cyan-200"
-                  href="/#reserva"
-                >
-                  Reservar Solo fachadas
-                </Link>
-                <a
-                  className="inline-flex rounded border border-datum-line px-6 py-3 font-semibold text-white transition hover:border-datum-cyan"
-                  href={`mailto:${site.email}?subject=Solicitud%20de%20presupuesto%20Solo%20fachadas`}
-                >
-                  Solicitar presupuesto
-                </a>
-              </div>
-            </section>
           </div>
         </section>
 
@@ -599,13 +510,15 @@ function ServiceMedia({
       ? pointCloudImages
       : serviceId === "plans-floor"
         ? plansFloorImages
+      : serviceId === "facades"
+        ? facadeImages
       : serviceId === "plans-2d"
         ? plans2dImages
         : serviceId === "revit-3d"
           ? revit3dImages
           : null;
   const hasGallery = serviceImages !== null;
-  const isPlans2dGallery = serviceId === "plans-2d" || serviceId === "plans-floor";
+  const isPlans2dGallery = serviceId === "plans-2d" || serviceId === "plans-floor" || serviceId === "facades";
   const isRevit3dGallery = serviceId === "revit-3d";
   const videoId = serviceVideos[serviceId];
 

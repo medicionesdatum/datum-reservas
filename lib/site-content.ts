@@ -145,6 +145,16 @@ export const serviceDetails = [
       "Incluye la nube de puntos y una planta acotada con superficies por estancia. No incluye sección ni alzado. Se pueden añadir plantas adicionales durante la reserva."
   },
   {
+    id: "facades",
+    name: "Solo fachadas",
+    summary:
+      "Levantamos el alzado acotado de la fachada en DXF/DWG editable y PDF, junto con la nube de puntos E57/RCP. Es la opción adecuada para rehabilitación de fachadas, SATE y proyectos de envolvente.",
+    formats: "E57 · RCP · DXF/DWG · PDF",
+    delivery: "2-3 días hábiles",
+    scope:
+      "El precio se calcula por superficie equivalente: se suma la superficie de cada módulo de fachada distinto (planta baja, primera, segunda…). Las plantas que repiten exactamente el mismo despiece que otra ya contada no suman. No incluye plantas ni secciones."
+  },
+  {
     id: "plans-2d",
     name: "Planos 2D Estado Actual",
     summary:
