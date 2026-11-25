@@ -44,6 +44,20 @@ export const publicPages = [
       "Servicios, proceso, especificaciones técnicas y preguntas frecuentes de DATUM Mediciones."
   },
   {
+    path: "/escaneado-laser-madrid",
+    lastModified: "2026-11-25",
+    title: "Escaneado láser 3D en Madrid",
+    description:
+      "Escaneado láser 3D y levantamientos de planos en Madrid: qué recibes, plazos, para quién es y cómo reservar."
+  },
+  {
+    path: "/como-trabajamos",
+    lastModified: "2026-11-25",
+    title: "Cómo trabajamos",
+    description:
+      "Cómo trabaja DATUM Mediciones: reserva online, escaneado, procesado y entrega de la documentación."
+  },
+  {
     path: "/sobre-datum",
     lastModified: "2026-11-24",
     title: "Sobre DATUM",

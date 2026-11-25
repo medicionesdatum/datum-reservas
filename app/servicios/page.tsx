@@ -314,6 +314,16 @@ export default function ServicesPage() {
                 {site.email}
               </a>
             </p>
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              Más información:{" "}
+              <Link className="underline underline-offset-4 hover:text-datum-cyan" href="/escaneado-laser-madrid">
+                Escaneado láser 3D en Madrid
+              </Link>{" "}
+              ·{" "}
+              <Link className="underline underline-offset-4 hover:text-datum-cyan" href="/como-trabajamos">
+                Cómo trabajamos
+              </Link>
+            </p>
 
             <section
               aria-labelledby="solo-fachadas-titulo"
