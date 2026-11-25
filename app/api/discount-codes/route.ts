@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { findUsableDiscount } from "@/lib/discount-codes";
-import { getPriceRange } from "@/lib/pricing";
+import { getPriceRange, services } from "@/lib/pricing";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import type { ServiceId } from "@/lib/types";
 
-const serviceIds = new Set<ServiceId>(["point_cloud", "plans_2d", "revit_3d"]);
+// Todos los servicios reservables (salen de lib/pricing.ts, para no quedarse atrás al añadir uno).
+const serviceIds = new Set<string>(Object.keys(services));
 
 export async function GET(request: Request) {
   const rateLimit = consumeRateLimit(request, {
