@@ -76,6 +76,20 @@ describe("tarifa de cliente", () => {
     expect(calculateQuote({ serviceId: "point_cloud", surface: 120, additionalPlans: 3 }).additionalTotal).toBe(0);
   });
 
+  it("Solo fachadas se cobra por superficie equivalente y no admite extras", () => {
+    const quote = calculateQuote({
+      serviceId: "facades",
+      surface: 150,
+      additionalPlans: 3,
+      additionalSections: 2,
+      additionalElevations: 2
+    });
+    expect(quote.basePrice).toBe(375);
+    expect(quote.additionalTotal).toBe(0);
+    expect(cents(quote.total)).toBe(453.75);
+    expect(cents(quote.deposit)).toBe(226.88);
+  });
+
   it("por encima de 1.000 m² es presupuesto a medida", () => {
     const quote = calculateQuote({ serviceId: "plans_2d", surface: 1001 });
     expect(quote.isCustomQuote).toBe(true);
@@ -117,6 +131,13 @@ describe("validación de reservas con la nueva tarifa", () => {
     acceptsBalanceTerms: true,
     acceptsMarketing: false
   };
+
+  it("Solo fachadas se acepta y descarta las plantas adicionales", () => {
+    const result = parseReservationInput({ ...input, serviceId: "facades", surface: 400, additionalPlans: 4 }, now);
+    expect(result.error).toBeNull();
+    expect(result.data?.serviceId).toBe("facades");
+    expect(result.data?.additionalPlans).toBe(0);
+  });
 
   it("acepta el servicio nuevo hasta 1.000 m² y rechaza más", () => {
     expect(parseReservationInput(input, now).error).toBeNull();

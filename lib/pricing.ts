@@ -140,6 +140,15 @@ export const services: Record<
     delivery: "2-3 días hábiles",
     from: firstRange.plans_2d
   },
+  facades: {
+    name: "Solo fachadas",
+    shortName: "Solo fachadas",
+    description:
+      "Servicio nube de puntos E57 y RCP y alzado acotado de fachada. Se cobra por superficie equivalente: se suman los módulos de fachada distintos.",
+    includes: ["DXF/DWG editable + PDF", "Precio por superficie equivalente de fachada", "Nube de puntos E57/RCP"],
+    delivery: "2-3 días hábiles",
+    from: firstRange.facades
+  },
   revit_3d: {
     name: "Modelo 3D Revit",
     shortName: "Modelo 3D Revit",
@@ -199,7 +208,8 @@ export function calculateQuote(params: {
     };
   }
 
-  const additionalPlans = params.serviceId === "point_cloud" ? 0 : params.additionalPlans;
+  const additionalPlans =
+    params.serviceId === "point_cloud" || params.serviceId === "facades" ? 0 : params.additionalPlans;
   const additionalSections = params.serviceId === "plans_2d" ? params.additionalSections : 0;
   const additionalElevations = params.serviceId === "plans_2d" ? params.additionalElevations : 0;
   const additionalCount =

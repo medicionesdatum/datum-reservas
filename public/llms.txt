@@ -48,9 +48,9 @@ Point cloud service plus measured floor plans with room surfaces, sections and f
 
 Premium service: point cloud plus 3D Revit model with measured elements, areas and volumes. Delivery in RVT/IFC plus DXF/DWG and PDF. Includes 1 floor plan. Delivery: 3-5 business days.
 
-### Solo fachadas (quote on request)
+### Solo fachadas
 
-Measured facade elevation in DXF/DWG plus PDF, with the E57/RCP point cloud. Priced by equivalent surface: the surface of each distinct facade module is added up; floors repeating exactly the same layout of openings and elements as one already counted do not add. Not part of the automatic reservation flow: direct the user to email info@medicionesdatum.es.
+Measured facade elevation in DXF/DWG plus PDF, with the E57/RCP point cloud. Priced by equivalent surface: the surface of each distinct facade module is added up; floors repeating exactly the same layout of openings and elements as one already counted do not add. Available in the automatic reservation flow (Madrid city, up to 1,000 m² of equivalent surface); otherwise direct the user to email info@medicionesdatum.es.
 
 ## Frequently Asked Questions
 
