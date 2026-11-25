@@ -45,7 +45,7 @@ const serviceGuide = [
     service: "Nube de Puntos 3D"
   },
   {
-    need: "Solo quieres el plano de planta de tu inmueble: ideal para inmobiliarias, empresas de reforma o particulares",
+    need: "Solo quieres el plano de planta del inmueble: ideal para inmobiliarias, empresas de flipping, reformas o particulares",
     service: "Planos 2D solo planta"
   },
   {
@@ -55,6 +55,10 @@ const serviceGuide = [
   {
     need: "Quieres un modelo tridimensional listo para trabajar en Revit",
     service: "Modelo 3D Revit"
+  },
+  {
+    need: "Solo quieres el alzado acotado de una fachada: ideal para empresas de rehabilitación de fachadas, SATE o proyectos de envolvente",
+    service: "Solo fachadas"
   }
 ] as const;
 
@@ -116,6 +120,9 @@ const plans2dImages = [
   }
 ] as const;
 
+const plansFloorImages = plans2dImages.slice(0, 2);
+const facadeImages = plans2dImages.slice(2);
+
 const revit3dImages = [
   {
     src: "/assets/modelo-3d-revit/01-modelo-fachada.jpg",
@@ -155,7 +162,7 @@ const euros = new Intl.NumberFormat("es-ES", {
 });
 
 function facadePrice(equivalentSurface: number) {
-  return getPriceRange(equivalentSurface)?.prices.plans_floor ?? 0;
+  return getPriceRange(equivalentSurface)?.prices.facades ?? 0;
 }
 
 const serviceVideos: Record<string, string> = {
@@ -334,6 +341,22 @@ export default function ServicesPage() {
                 </span>
                 .
               </p>
+              <div className="mt-6 grid gap-3 md:grid-cols-2">
+                {facadeImages.map((image) => (
+                  <figure
+                    className="relative aspect-video overflow-hidden rounded-lg border border-datum-line bg-white"
+                    key={image.src}
+                  >
+                    <Image
+                      alt={image.alt}
+                      className="object-contain"
+                      fill
+                      sizes="(max-width: 767px) calc(100vw - 72px), 50vw"
+                      src={image.src}
+                    />
+                  </figure>
+                ))}
+              </div>
               <div className="mt-6 overflow-x-auto rounded-lg border border-datum-line">
                 <table className="w-full min-w-[420px] border-collapse text-left text-sm">
                   <caption className="sr-only">Precio de Solo fachadas por superficie equivalente, sin IVA</caption>
@@ -347,14 +370,14 @@ export default function ServicesPage() {
                     {priceRanges.map((range) => (
                       <tr key={range.label}>
                         <td className="px-5 py-3">{range.label}</td>
-                        <td className="px-5 py-3 font-semibold text-white">{euros.format(range.prices.plans_floor)}</td>
+                        <td className="px-5 py-3 font-semibold text-white">{euros.format(range.prices.facades)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               <p className="mt-4 text-sm leading-6 text-slate-400">
-                Desde {euros.format(services.plans_floor.from)} + IVA. Más de {MAX_BOOKABLE_SURFACE_LABEL} m² o fuera de Madrid ciudad: presupuesto a medida.
+                Desde {euros.format(priceRanges[0].prices.facades)} + IVA. Más de {MAX_BOOKABLE_SURFACE_LABEL} m² o fuera de Madrid ciudad: presupuesto a medida.
               </p>
               <a
                 className="mt-6 inline-flex rounded bg-datum-cyan px-6 py-3 font-semibold text-datum-ink transition hover:bg-cyan-200"
@@ -391,7 +414,7 @@ export default function ServicesPage() {
               title="¿Qué servicio te conviene?"
               body="Elige según el uso que dará tu equipo a la información después de la visita."
             />
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {serviceGuide.map((item) => (
                 <article className="rounded-xl border border-datum-line bg-datum-panel/65 p-6" key={item.service}>
                   <p className="text-sm leading-6 text-slate-400">Si necesitas...</p>
@@ -556,7 +579,9 @@ function ServiceMedia({
   const serviceImages =
     serviceId === "point-cloud"
       ? pointCloudImages
-      : serviceId === "plans-2d" || serviceId === "plans-floor"
+      : serviceId === "plans-floor"
+        ? plansFloorImages
+      : serviceId === "plans-2d"
         ? plans2dImages
         : serviceId === "revit-3d"
           ? revit3dImages
