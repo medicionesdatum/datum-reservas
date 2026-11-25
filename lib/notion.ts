@@ -337,6 +337,7 @@ function serviceLabel(value: unknown) {
   const labels: Record<string, string> = {
     point_cloud: "Nube de Puntos 3D",
     plans_floor: "Planos 2D solo planta",
+    facades: "Solo fachadas",
     plans_2d: "Planos 2D Estado Actual",
     revit_3d: "Modelo 3D Revit"
   };

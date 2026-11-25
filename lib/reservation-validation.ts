@@ -3,7 +3,7 @@ import { normalizePhoneNumber } from "@/lib/phone";
 import { MAX_BOOKABLE_SURFACE, MAX_BOOKABLE_SURFACE_LABEL } from "@/lib/pricing";
 import type { RepresentationType, ReservationInput, ServiceId } from "@/lib/types";
 
-const serviceIds = new Set<ServiceId>(["point_cloud", "plans_floor", "plans_2d", "revit_3d"]);
+const serviceIds = new Set<ServiceId>(["point_cloud", "plans_floor", "facades", "plans_2d", "revit_3d"]);
 const representations = new Set<RepresentationType>([
   "geometria_real",
   "representacion_ortogonalizada"
@@ -95,7 +95,7 @@ export function parseReservationInput(value: unknown, now = Date.now()):
     data: {
       serviceId,
       surface,
-      additionalPlans: serviceId === "point_cloud" ? 0 : additionalPlans,
+      additionalPlans: serviceId === "point_cloud" || serviceId === "facades" ? 0 : additionalPlans,
       additionalSections: serviceId === "plans_2d" ? additionalSections : 0,
       additionalElevations: serviceId === "plans_2d" ? additionalElevations : 0,
       representation,

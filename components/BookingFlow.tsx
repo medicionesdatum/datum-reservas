@@ -95,9 +95,11 @@ export default function BookingFlow({ reviews }: { reviews?: ReactNode }) {
   const currentDiscountMessage = checkedDiscountKey === discountLookupKey ? discountMessage : "";
   const quote = useMemo(() => calculateQuote({ ...form, discount: currentDiscount }), [form, currentDiscount]);
   const currentStep = steps[step]?.id ?? "service";
+  // La nube de puntos y Solo fachadas no tienen tipo de representación.
+  const skipsRepresentation = form.serviceId === "point_cloud" || form.serviceId === "facades";
   const visibleSteps = steps
     .map((item, index) => ({ ...item, index }))
-    .filter((item) => form.serviceId !== "point_cloud" || item.id !== "representation");
+    .filter((item) => !skipsRepresentation || item.id !== "representation");
   const allowedSlots = useMemo(
     () =>
       getBookableSlots(form.visitDate).filter(
@@ -106,7 +108,7 @@ export default function BookingFlow({ reviews }: { reviews?: ReactNode }) {
     [form.visitDate, unavailableSlots]
   );
   const additionalCount =
-    form.serviceId === "point_cloud"
+    form.serviceId === "point_cloud" || form.serviceId === "facades"
       ? 0
       : form.additionalPlans +
         (form.serviceId === "plans_2d" ? form.additionalSections + form.additionalElevations : 0);
@@ -184,7 +186,7 @@ export default function BookingFlow({ reviews }: { reviews?: ReactNode }) {
   function selectService(serviceId: ServiceId) {
     patchForm({
       serviceId,
-      ...(serviceId === "point_cloud"
+      ...(serviceId === "point_cloud" || serviceId === "facades"
         ? {
             additionalPlans: 0,
             additionalSections: 0,
@@ -268,7 +270,7 @@ export default function BookingFlow({ reviews }: { reviews?: ReactNode }) {
 
     setStep((current) => {
       const next = Math.min(current + 1, steps.length - 1);
-      return form.serviceId === "point_cloud" && steps[next]?.id === "representation"
+      return skipsRepresentation && steps[next]?.id === "representation"
         ? Math.min(next + 1, steps.length - 1)
         : next;
     });
@@ -277,7 +279,7 @@ export default function BookingFlow({ reviews }: { reviews?: ReactNode }) {
   function goBack() {
     setStep((current) => {
       const previous = Math.max(0, current - 1);
-      return form.serviceId === "point_cloud" && steps[previous]?.id === "representation"
+      return skipsRepresentation && steps[previous]?.id === "representation"
         ? Math.max(0, previous - 1)
         : previous;
     });
@@ -473,7 +475,7 @@ export default function BookingFlow({ reviews }: { reviews?: ReactNode }) {
             {services[form.serviceId].name}
           </h2>
           <dl className="mt-5 space-y-3 text-sm">
-            <SummaryLine label="Superficie" value={`${form.surface || 0} m²`} />
+            <SummaryLine label={form.serviceId === "facades" ? "Superficie equivalente" : "Superficie"} value={`${form.surface || 0} m²`} />
             <SummaryLine label="Rango" value={quote.rangeLabel || "Pendiente"} />
             <SummaryLine label="Extras de representación" value={`${additionalCount}`} />
             <SummaryLine label="Base imponible" value={formatCurrency(quote.taxableBase)} />
@@ -531,7 +533,7 @@ function StepServices({
   return (
     <section>
       <h2 className="text-2xl font-semibold">Elige tu servicio</h2>
-      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {Object.entries(services).map(([id, service]) => (
           <button
             className={`rounded-lg border p-5 text-left transition ${
@@ -592,15 +594,17 @@ function StepFeatures({
   unitPrice: number;
   onChange: (update: Partial<ReservationInput>) => void;
 }) {
-  const showRepresentationCounts = form.serviceId !== "point_cloud";
+  const showRepresentationCounts = form.serviceId !== "point_cloud" && form.serviceId !== "facades";
+  const isFacades = form.serviceId === "facades";
   const showElevationAndSectionCounts = form.serviceId === "plans_2d";
 
   return (
     <section>
       <h2 className="text-2xl font-semibold">Características</h2>
       <label className="mt-5 block text-sm text-slate-300" htmlFor="surface">
-        Introduce la superficie aproximada en m² del inmueble a medir, teniendo
-        en cuenta todas las plantas a representar.
+        {isFacades
+          ? "Introduce la superficie equivalente de fachada en m²: suma la superficie de cada módulo de fachada distinto (planta baja, primera, segunda…). Las plantas que repiten exactamente el mismo despiece de huecos y elementos que otra ya contada no suman. Si se levantan varias fachadas, suma los módulos distintos de cada una."
+          : "Introduce la superficie aproximada en m² del inmueble a medir, teniendo en cuenta todas las plantas a representar."}
       </label>
       <input
         className="focus-ring mt-2 w-full rounded border border-datum-line bg-white px-4 py-3 text-lg"
@@ -973,10 +977,10 @@ function StepPayment({
       <div className="mt-5 rounded-lg border border-datum-line bg-white/5 p-5">
         <dl className="grid gap-3 text-sm md:grid-cols-2">
           <SummaryLine label="Servicio" value={services[form.serviceId].name} />
-          <SummaryLine label="Superficie" value={`${form.surface} m²`} />
+          <SummaryLine label={form.serviceId === "facades" ? "Superficie equivalente" : "Superficie"} value={`${form.surface} m²`} />
           <SummaryLine label="Rango" value={quote.rangeLabel} />
           <SummaryLine label="Extras de representación" value={`${additionalCount}`} />
-          {form.serviceId !== "point_cloud" ? (
+          {form.serviceId !== "point_cloud" && form.serviceId !== "facades" ? (
             <SummaryLine label="Representación" value={form.representation === "geometria_real" ? "Geometría real" : "Representación ortogonalizada"} />
           ) : null}
           <SummaryLine label="Fecha y hora" value={`${form.visitDate} ${form.visitTime}`} />

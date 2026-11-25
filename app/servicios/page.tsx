@@ -331,7 +331,7 @@ export default function ServicesPage() {
               id="solo-fachadas"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-datum-cyan">
-                Presupuesto bajo consulta
+                Reserva online
               </p>
               <h3 className="mt-3 text-2xl font-semibold text-white md:text-3xl" id="solo-fachadas-titulo">
                 Solo fachadas
@@ -389,12 +389,20 @@ export default function ServicesPage() {
               <p className="mt-4 text-sm leading-6 text-slate-400">
                 Desde {euros.format(priceRanges[0].prices.facades)} + IVA. Más de {MAX_BOOKABLE_SURFACE_LABEL} m² o fuera de Madrid ciudad: presupuesto a medida.
               </p>
-              <a
-                className="mt-6 inline-flex rounded bg-datum-cyan px-6 py-3 font-semibold text-datum-ink transition hover:bg-cyan-200"
-                href={`mailto:${site.email}?subject=Solicitud%20de%20presupuesto%20Solo%20fachadas`}
-              >
-                Solicitar presupuesto
-              </a>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  className="inline-flex rounded bg-datum-cyan px-6 py-3 font-semibold text-datum-ink transition hover:bg-cyan-200"
+                  href="/#reserva"
+                >
+                  Reservar Solo fachadas
+                </Link>
+                <a
+                  className="inline-flex rounded border border-datum-line px-6 py-3 font-semibold text-white transition hover:border-datum-cyan"
+                  href={`mailto:${site.email}?subject=Solicitud%20de%20presupuesto%20Solo%20fachadas`}
+                >
+                  Solicitar presupuesto
+                </a>
+              </div>
             </section>
           </div>
         </section>

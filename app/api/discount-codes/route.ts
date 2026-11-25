@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ discount: null });
   }
 
-  const normalizedAdditionalPlans = serviceId === "point_cloud" ? 0 : additionalPlans;
+  const normalizedAdditionalPlans = serviceId === "point_cloud" || serviceId === "facades" ? 0 : additionalPlans;
   const normalizedAdditionalSections = serviceId === "plans_2d" ? additionalSections : 0;
   const normalizedAdditionalElevations = serviceId === "plans_2d" ? additionalElevations : 0;
   const additionalCount =
