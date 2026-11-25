@@ -70,6 +70,12 @@ export function SiteFooter() {
             <Link className="transition hover:text-datum-cyan" href="/servicios">
               Servicios y FAQ
             </Link>
+            <Link className="transition hover:text-datum-cyan" href="/escaneado-laser-madrid">
+              Escaneado láser 3D en Madrid
+            </Link>
+            <Link className="transition hover:text-datum-cyan" href="/como-trabajamos">
+              Cómo trabajamos
+            </Link>
             <Link className="transition hover:text-datum-cyan" href="/sobre-datum">
               Sobre DATUM
             </Link>

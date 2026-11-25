@@ -2,13 +2,15 @@
 
 DATUM Mediciones documenta la realidad exacta de inmuebles mediante escaneado láser 3D de última generación. Convierte la captura de datos en nubes de puntos, planos 2D y modelos 3D precisos, listos para proyectar, reformar, construir o analizar con una base técnica fiable. DATUM Mediciones ha realizado más de 100 mediciones en Madrid.
 
-Última actualización: 2026-11-24
+Última actualización: 2026-11-25
 
 Website: https://medicionesdatum.es
 Reservas: https://medicionesdatum.es/
 Información y servicios: https://medicionesdatum.es/servicios
 Contacto: https://medicionesdatum.es/contacto
 Sobre DATUM: https://medicionesdatum.es/sobre-datum
+Escaneado láser 3D en Madrid: https://medicionesdatum.es/escaneado-laser-madrid
+Cómo trabajamos: https://medicionesdatum.es/como-trabajamos
 Privacidad: https://medicionesdatum.es/privacidad
 Términos: https://medicionesdatum.es/terminos
 Política de cancelación: https://medicionesdatum.es/politica-cancelacion
@@ -75,6 +77,11 @@ Yes, through a custom quote. Send the address, approximate area, and required se
 ### What scanning accuracy does DATUM provide?
 
 Leica BLK2GO provides an approximate indoor accuracy of ±10 mm, suitable for existing-condition documentation, projects, permits, and renovations.
+
+## Guides and process pages
+
+- [Escaneado láser 3D en Madrid](https://medicionesdatum.es/escaneado-laser-madrid): Servicios de escaneado láser 3D y levantamientos de planos en Madrid: qué se entrega, formatos, plazos, para quién es y cómo reservar.
+- [Cómo trabajamos](https://medicionesdatum.es/como-trabajamos): Proceso en cinco pasos, de la reserva online a la entrega digital: escaneado con Leica BLK2GO, procesado, planos 2D o modelo 3D, plazos y política de cambios.
 
 ## Booking Rules
 
